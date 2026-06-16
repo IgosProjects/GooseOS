@@ -25,6 +25,7 @@
 void InitIDT() {
     // The IDT structure is made up of 256 entires(atleast on legacy PIC).
     // Each entry contains a specific structure that tells the CPU where to go on interrupt.
-
     // We can construct an IDT table very simply!
+
+    
 }

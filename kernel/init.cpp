@@ -34,7 +34,7 @@ extern "C" void InitKernel() {
 	Console::Init(fb);
 
 	// Print boot banner
-	Console::PrintString("Welcome to GooseOS!\n"); 
+	Console::PrintString("Welcome to GooseOS v1.0!\n"); 
 
 	asm volatile("hlt");
 }
