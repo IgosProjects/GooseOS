@@ -20,12 +20,19 @@
 #include <cpu/idt.hpp>
 #include <console/console.hpp>
 
+using namespace GooseOS;
+
+struct CPU::IDTEntry IDTTable[255]; // Make the IDT table array with 256 entries
+struct CPU::IDTPointer IDTPtr; // Make the IDT pointer to point to the IDT array
+
 // Initilizes the IDT driver, doesnt automaticly load it!
 // For that, use LoadIDT! Also only run once on GP and load on the GP and all APs
-void InitIDT() {
-    // The IDT structure is made up of 256 entires(atleast on legacy PIC).
+void CPU::InitIDT() {
+    // The IDT structure is made up of 255 entires(atleast on legacy PIC).
     // Each entry contains a specific structure that tells the CPU where to go on interrupt.
     // We can construct an IDT table very simply!
 
-    
+    for (u8 i = 0; i < 255; i++) {
+        Console::PrintString("Adding IDT entry");
+    }
 }

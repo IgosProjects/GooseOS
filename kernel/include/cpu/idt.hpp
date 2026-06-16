@@ -32,9 +32,10 @@ namespace GooseOS::CPU {
         u16 offset_mid; // Bits 16-31
         u32 offset_high; // Bits 31-63
 
-        u32 zero;            // reserved
+        u32 zero; // reserved
     } __attribute__((packed));
 
+    // This struct represents a pointer to an IDT table with 255 entries
 	struct IDTPointer {
 		u16 size; // Size of IDT table - 1
 		u64 offset; // Offset in memory to IDT table

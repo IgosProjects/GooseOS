@@ -46,12 +46,14 @@ u64 MinFontScale = 0;
 
 // Terminal color pallete
 
-Graphics::RGBColor TerminalPallete[5] = {
-    {255, 0, 0},
-    {0, 255, 0},
-    {0, 0, 255},
-    {0, 0, 0},
-    {255, 255, 255}
+Graphics::RGBColor TerminalPallete[7] = {
+    {255, 0, 0}, // Red
+    {0, 255, 0}, // Blue
+    {0, 0, 255}, // Green
+    {0, 0, 0}, // Black
+    {255, 255, 255}, // White
+    {0, 72, 252}, // Cyan
+    {252, 223, 0} // Yellow
 };
 
 // INTERNAL CONSOLE CONFIG END
