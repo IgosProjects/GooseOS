@@ -1,0 +1,18 @@
+[binaries]
+c = 'x86_64-elf-gcc'
+cpp = 'x86_64-elf-g++'
+ar = 'x86_64-elf-ar'
+ld = 'x86_64-elf-ld'
+nasm = 'nasm'
+
+[built-in options]
+c_args = ['-ffreestanding', '-nostdlib', '-nostdinc', '-fno-builtin']
+c_link_args = ['-nostdlib', '-static']
+cpp_args = ['-ffreestanding', '-nostdlib', '-nostdinc', '-fno-builtin', '-fno-exceptions', '-fno-rtti']
+cpp_link_args = ['-nostdlib', '-static']
+
+[host_machine]
+system = 'none'
+cpu_family = 'x86_64'
+cpu = 'x86_64'
+endian = 'little'

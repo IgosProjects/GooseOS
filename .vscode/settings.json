@@ -1,0 +1,5 @@
+{
+    "C_Cpp.default.compilerPath": "/home/osdever/tools/x86-elf-tools/bin/x86_64-elf-g++",
+    "C_Cpp.default.configurationProvider": "mesonbuild.mesonbuild",
+    "mesonbuild.configureOnOpen": false
+}
