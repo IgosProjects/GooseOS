@@ -19,6 +19,7 @@
 
 #pragma once
 #include <types.hpp>
+#include <stdarg.h>
 #include <boot/framebuffer.hpp>
 
 // Define the console namespace
@@ -31,11 +32,23 @@ namespace GooseOS::Console {
         Graphics::RGBColor BackgroundColor = {0, 0, 0}; // What color should the background of the text be?
     };
 
+    // Instantly drops the lock on the console and allows for printing
+    // Used in kpanic
+    void EmergencyUnlock();
+
+    // Prints a string to the display
+    // Doesnt lock, that has to be done in other functions
+    // Expects va_args directly!
+    void PrintStringInternal(const char* s, va_list args);
+
     // Prints a string to the display
     void PrintString(const char* s, ...);
 
     // Prints a character to the display
     void PrintChar(const char c);
+
+    // Outputs a string to the display but with "OK" before it
+    void OK(const char* s, ...);
 
     // Initilizes the console driver, allows for printing
     void Init(GooseOS::Graphics::Framebuffer* fb);

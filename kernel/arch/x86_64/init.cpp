@@ -20,6 +20,7 @@
 #include <arch.hpp>
 #include <core.hpp>
 #include <cpu/idt.hpp>
+#include <cpu/core.hpp>
 #include <console/console.hpp>
 #include <limine/limine.h>
 #include <cpu/gdt.hpp>
@@ -27,6 +28,7 @@
 using namespace GooseOS;
 extern volatile struct limine_mp_request mp_request; // Get the Limine MP request
 
+CPU::CoreContext CoreContextes[16]; // Allow up to 16 cores only!
 bl APsSafeToRun = kfalse; // Is the system ready to start up APs
 
 // Get the local APIC id, used detect APs
@@ -48,15 +50,39 @@ void WaitUntilGPReady() {
     }
 }
 
+// Loads the core context passed in into GS
+void LoadCoreContext(CPU::CoreContext* context) {
+    uint64_t addr = reinterpret_cast<uint64_t>(context);
+    uint32_t low = addr & 0xFFFFFFFF;
+    uint32_t high = addr >> 32;
+    
+    // 0xC0000101 is the IA32_GS_BASE Model Specific Register
+    asm volatile("wrmsr" : : "c"(0xC0000101), "a"(low), "d"(high));
+}
+
 // Waits until GP is ready, then starts executes AP code
 void APEntry(struct limine_mp_info* info) {
     CPU::InitGDT();
     CPU::LoadIDT();
 
+    // Set core context(GS)
+    uint32_t id = info->processor_id;
+    CoreContextes[id].CoreID = id;
+    CoreContextes[id].LapicID = info->lapic_id;
+    LoadCoreContext(&CoreContextes[id]);
+
     WaitUntilGPReady();
+    asm volatile("sti"); // Enable interrupts
+
+    if (info->processor_id == 1) {
+        Console::Log("Diving by zero on Core 1!");
+
+        volatile u8 a = 0;
+        volatile u8 b = 10;
+        volatile u8 c = b / a;
+    }
 
     Console::Log("Hi from AP %u!", info->processor_id);
-
     Core::Halt(); // Stop the AP!
 }
 
@@ -64,6 +90,10 @@ void APEntry(struct limine_mp_info* info) {
 void Arch::EarlyInit() {
     // NOTE!!
     // The below code only runs on the GP(General Processor) before APs(Application Processors) are ready!
+    
+    CoreContextes[0].CoreID= 0;
+    CoreContextes[0].LapicID = 0; // FIXME: Get actual LAPIC id
+    LoadCoreContext(&CoreContextes[0]);
 
     // Initilize the GDT and code segments
     CPU::InitGDT();
@@ -71,6 +101,8 @@ void Arch::EarlyInit() {
     // Load the IDT(interrupt descriptor table)
     CPU::InitIDT();
     CPU::LoadIDT();
+
+    asm volatile("sti"); // Enable interrupts
 }
 
 // Initilizes the not so needed arch specific functions

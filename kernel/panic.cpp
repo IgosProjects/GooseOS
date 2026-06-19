@@ -19,6 +19,7 @@
 
 #include <core.hpp>
 #include <console/console.hpp>
+#include <stdarg.h>
 
 using namespace GooseOS;
 
@@ -30,7 +31,11 @@ void Core::Halt() {
 
 // Causes a kernel panic and displays the screen
 // NOTE: Only call on CRITICAL issues!
-void Core::Panic(const char* r) {
+[[noreturn]] void Core::Panic(const char* r, ...) {
+    Console::EmergencyUnlock();
+    va_list a;
+    va_start(a, r);
+
     Console::PrintString("C[c,0]\n========================\n\n");
     Console::PrintString("KERNEL PANIC!\n");
     Console::PrintString("\n========================\n\n");
@@ -38,10 +43,12 @@ void Core::Panic(const char* r) {
     Console::PrintString("Please make a new issue on Github so we can fix it.\n");
     Console::PrintString("\n========================\n\n");
 
-    Console::PrintString(r);
+    Console::PrintStringInternal(r, a);
     Console::PrintChar('\n');
 
     Console::PrintString("\n========================\n\n");
+
+    va_end(a);
 
     Core::Halt();
 }

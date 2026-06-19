@@ -25,4 +25,10 @@ namespace GooseOS::CPU {
         u32 id; // LAPIC CPU id
         u64 ticks; // Number of ticks that have happend
     };
+
+    // Core context data stored in GS
+    struct CoreContext {
+        u32 CoreID; // Core id
+        u32 LapicID; // LAPIC id
+    };
 } 

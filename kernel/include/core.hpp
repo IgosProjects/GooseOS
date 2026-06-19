@@ -32,7 +32,7 @@
 namespace GooseOS::Core {
     // Causes a kernel panic and displays the screen
     // NOTE: Only call on CRITICAL issues!
-    [[noreturn]] void Panic(const char* r);
+    [[noreturn]] void Panic(const char* r, ...);
 
     // Stops execution and the CPU forever!
     void Halt();

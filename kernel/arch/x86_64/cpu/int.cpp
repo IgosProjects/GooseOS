@@ -22,6 +22,7 @@
 // white IRQs are issued by external hardware(keyboard, mouse, timer)
 
 #include <core.hpp>
+#include <console/console.hpp>
 
 // Used to get ISR names when fired
 const char* ISRNames[32] = {
@@ -71,7 +72,20 @@ struct interrupt_frame {
     u64 rflags;
 } __attribute__((packed));
 
+using namespace GooseOS;
+
+// INTERNAL TO DRIVER
+// This function gets the core id using the GS register, used to know what processor encountered the error!
+u32 GetCoreIDViaGS() {
+    u32 id;
+    // Using "eax" or a 32-bit register constraint forces a 32-bit read
+    asm volatile("mov %0, %%gs:0" : "=r"(id)); 
+    return id;
+}
+
 // Handler for CPU issued ISR exceptions
 extern "C" void ISRHandler(interrupt_frame* int_frame) {
-    GooseOS::Core::Panic(ISRNames[int_frame->int_no]); // Panic the kernel since ISRs are critical
+    u64 CoreID = GetCoreIDViaGS();
+
+    Core::Panic("Core %u has encountered a %s", CoreID, ISRNames[int_frame->int_no]); // Panic with the correct name and core
 }

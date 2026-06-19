@@ -283,10 +283,17 @@ void PrintHexInternal(u64 value) {
     }
 }
 
-// Prints a string to the display
+// Instantly drops the lock on the console and allows for printing
+// Used in kpanic
+void Console::EmergencyUnlock() {
+    ConsoleLock.Unlock(); // INSTANT UNLOCK!
+}
+
 // INTERNAL TO DRIVER
+// Prints a string to the display
 // Doesnt lock, that has to be done in other functions
-void PrintStringInternal(const char* s, va_list args) {
+// Expects va_args directly!
+void Console::PrintStringInternal(const char* s, va_list args) {
     if (!IsConsoleReady) {
         Console::Init(Graphics::GetCurrentFramebuffer());
         IsConsoleReady = ktrue;
@@ -344,6 +351,24 @@ void Console::Log(const char* s, ...) {
     ConsoleLock.Lock();
 
     PrintStringInternal("C[fg,6]LOGC[r,] ", {});
+
+    va_list a;
+    va_start(a, s);
+
+    PrintStringInternal(s, a);
+
+    Console::PrintChar('\n');
+
+    va_end(a);
+
+    ConsoleLock.Unlock();
+}
+
+// Outputs a string to the display but with "OK" before it
+void Console::OK(const char* s, ...) {
+    ConsoleLock.Lock();
+
+    PrintStringInternal("C[fg,1]OKC[r,] ", {});
 
     va_list a;
     va_start(a, s);
