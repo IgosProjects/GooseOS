@@ -75,8 +75,8 @@ void Arch::EarlyInit() {
 
 // Initilizes the not so needed arch specific functions
 void Arch::LateInit() {
-    Console::Log("Starting APs!");
-
+    Console::Log("Starting APs at address %x!", reinterpret_cast<uint64_t>(APEntry));
+ 
     struct limine_mp_response* mp_response = mp_request.response;
     
     if (mp_response != nullptr) {

@@ -252,6 +252,37 @@ void PrintUnsignedInternal(u64 value) {
     }
 }
 
+// This functions prints a HEX value to the display
+// INTERNAL TO DRIVER
+void PrintHexInternal(u64 value) {
+    char buffer[16]; // A 64 bit int value is maximum 16 digits in hex!
+    u32 i = 0;
+
+    // Same as printing numbers, handle zero
+    if (value == 0) {
+        Console::PrintChar('0');
+        return;
+    }
+
+    // Extract hex digits from right to left
+    while (value > 0) {
+        u32 remainder = value % 16;
+        
+        if (remainder < 10) {
+            buffer[i++] = '0' + remainder; // 0 - 9
+        } else {
+            buffer[i++] = 'A' + (remainder - 10); // A - F
+        }
+        
+        value /= 16;
+    }
+
+    // Print the buffer in reverse order
+    while (i > 0) {
+        Console::PrintChar(buffer[--i]);
+    }
+}
+
 // Prints a string to the display
 // INTERNAL TO DRIVER
 // Doesnt lock, that has to be done in other functions
@@ -280,6 +311,8 @@ void PrintStringInternal(const char* s, va_list args) {
                 }
             } else if (*s == 'u') {
                 PrintUnsignedInternal(va_arg(args, u64));
+            } else if (*s == 'x') {
+                PrintHexInternal(va_arg(args, u64));
             }
 
             s++; // Skip the type specifier
