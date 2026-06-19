@@ -24,9 +24,11 @@
 #include <console/serial.hpp>
 #include <console/font-8x8.h>
 #include <types.hpp>
+#include <spinlock.hpp>
 
 using namespace GooseOS;
 
+GooseOS::Spinlock ConsoleLock;
 bl IsConsoleReady = kfalse;
 
 // This is the x86_64 implemenation of the console driver, the console driver needs to provide basic functions
@@ -226,12 +228,12 @@ const char* ParseStyling(const char* s) {
 }
 
 // Prints a string to the display
-void Console::PrintString(const char* s) {
+// INTERNAL TO DRIVER
+// Doesnt lock, that has to be done in other functions
+void PrintStringInternal(const char* s) {
     if (!IsConsoleReady) {
         Console::Init(Graphics::GetCurrentFramebuffer());
         IsConsoleReady = ktrue;
-
-        return;
     }
 
     while (*s) {
@@ -240,17 +242,30 @@ void Console::PrintString(const char* s) {
             continue; // Next character
         }
 
-        PrintChar(*s); // Print the character
+        Console::PrintChar(*s); // Print the character
         s++; // Move the pointer forward
     }
 }
 
+// Prints a string to the display
+void Console::PrintString(const char* s) {
+    ConsoleLock.Lock();
+
+    PrintStringInternal(s);
+
+    ConsoleLock.Unlock();
+}
+
 // Outputs a string to the display but with "LOG" before it
 void Console::Log(const char* s) {
+    ConsoleLock.Lock();
+
     // FIXME: Add proper printf so this can be easier
-    Console::PrintString("C[fg,6]LOGC[r,] ");
-    Console::PrintString(s);
+    PrintStringInternal("C[fg,6]LOGC[r,] ");
+    PrintStringInternal(s);
     Console::PrintChar('\n');
+
+    ConsoleLock.Unlock();
 }
 
 // Initilizes the console driver, allows for printing

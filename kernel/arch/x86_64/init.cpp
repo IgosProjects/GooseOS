@@ -49,30 +49,19 @@ void WaitUntilGPReady() {
 }
 
 // Waits until GP is ready, then starts executes AP code
-void APEntry() {
+void APEntry(struct limine_mp_info* info) {
     CPU::InitGDT();
     CPU::LoadIDT();
 
     WaitUntilGPReady();
+
+    Console::Log("Hi from AP!");
 
     Core::Halt(); // Stop the AP!
 }
 
 // Initilizes the needed architecture specific functions(CPU, interrupts, UART, etc, etc)
 void Arch::EarlyInit() {
-    // Check if we are running an application processor(AP)
-    u8 LocalAPICID = GetLocalApicId();
-
-    struct limine_mp_response* mp_response = mp_request.response; // Get the response
-    //assert(mp_response != nullptr, "MP response missing during Arch::EarlyInit!"); // Check if valid pointer 
-
-    // If this check if true, this is an AP!
-    if (LocalAPICID != mp_response->bsp_lapic_id) {
-        // We need to quickly redirect it!
-        APEntry();
-        return; // If somehow returned, well uhh return
-    }
-
     // NOTE!!
     // The below code only runs on the GP(General Processor) before APs(Application Processors) are ready!
 
@@ -87,6 +76,23 @@ void Arch::EarlyInit() {
 // Initilizes the not so needed arch specific functions
 void Arch::LateInit() {
     Console::Log("Starting APs!");
+
+    struct limine_mp_response* mp_response = mp_request.response;
+    
+    if (mp_response != nullptr) {
+        for (u64 i = 0; i < mp_response->cpu_count; i++) {
+            struct limine_mp_info* cpu = mp_response->cpus[i];
+
+            // Skip the BSP
+            if (cpu->lapic_id == mp_response->bsp_lapic_id) {
+                continue;
+            }
+
+            // Wake up the AP and run the entry code
+            __atomic_store_n(&cpu->goto_address, reinterpret_cast<uint64_t>(APEntry), __ATOMIC_RELEASE);
+        }
+    }
+
     APsSafeToRun = ktrue;
 
     Console::Log("Welcome to GooseOS on x86_64");
