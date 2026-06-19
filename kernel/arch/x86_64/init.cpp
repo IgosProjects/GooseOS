@@ -55,7 +55,7 @@ void APEntry(struct limine_mp_info* info) {
 
     WaitUntilGPReady();
 
-    Console::Log("Hi from AP!");
+    Console::Log("Hi from AP %u!", info->processor_id);
 
     Core::Halt(); // Stop the AP!
 }

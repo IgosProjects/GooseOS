@@ -32,7 +32,7 @@ namespace GooseOS::Console {
     };
 
     // Prints a string to the display
-    void PrintString(const char* s);
+    void PrintString(const char* s, ...);
 
     // Prints a character to the display
     void PrintChar(const char c);
@@ -41,7 +41,7 @@ namespace GooseOS::Console {
     void Init(GooseOS::Graphics::Framebuffer* fb);
 
     // Outputs a string to the display but with "LOG" before it
-    void Log(const char* s);
+    void Log(const char* s, ...);
 
     // Sets the console state to the passed in one
     void SetConsoleState(ConsoleState* state);

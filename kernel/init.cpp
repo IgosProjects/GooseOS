@@ -38,8 +38,6 @@ extern "C" void InitKernel() {
 
 	Arch::LateInit(); // Call the Arch::LateInit function to do not so critical stuff
 
-	Console::Log("Somehow survived divide by zero!");
-
 	for (;;) {
 		asm volatile("hlt");
 	}

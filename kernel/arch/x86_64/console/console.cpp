@@ -17,6 +17,7 @@
  *	Copyright(c) 2026 EyeDev
 */
 
+#include <stdarg.h>
 #include <boot/framebuffer.hpp>
 #include <console/console.hpp>
 #include <math.hpp>
@@ -227,10 +228,34 @@ const char* ParseStyling(const char* s) {
     return s;
 }
 
+// INTERNAL TO DRIVER
+void PrintUnsignedInternal(u64 value) {
+    char buffer[32]; // Holds an 64 bit value with base 10
+    u32 i = 0;
+
+    // Handle 0 because loop wont work otherwise
+    if (value == 0) {
+        Console::PrintChar('0'); 
+        return;
+    }
+
+    // Extract digits from right to left
+    while (value > 0) {
+        u32 remainder = value % 10;
+        buffer[i++] = '0' + remainder; // Convert to ASCII
+        value /= 10;
+    }
+
+    // The digits are backward in the buffer, so print them correctly
+    while (i > 0) {
+        Console::PrintChar(buffer[--i]);
+    }
+}
+
 // Prints a string to the display
 // INTERNAL TO DRIVER
 // Doesnt lock, that has to be done in other functions
-void PrintStringInternal(const char* s) {
+void PrintStringInternal(const char* s, va_list args) {
     if (!IsConsoleReady) {
         Console::Init(Graphics::GetCurrentFramebuffer());
         IsConsoleReady = ktrue;
@@ -242,28 +267,59 @@ void PrintStringInternal(const char* s) {
             continue; // Next character
         }
 
+        // Check for "%" to start printf checking
+        if (*s == '%') {
+            s++; // Skip the "%"
+
+            if (*s == 's') {
+                const char* str = va_arg(args, const char*);
+
+                while (*str) {
+                    Console::PrintChar(*str);
+                    str++;
+                }
+            } else if (*s == 'u') {
+                PrintUnsignedInternal(va_arg(args, u64));
+            }
+
+            s++; // Skip the type specifier
+
+            continue; // Next character
+        }
+
         Console::PrintChar(*s); // Print the character
         s++; // Move the pointer forward
     }
 }
 
 // Prints a string to the display
-void Console::PrintString(const char* s) {
+void Console::PrintString(const char* s, ...) {
     ConsoleLock.Lock();
 
-    PrintStringInternal(s);
+    va_list a;
+    va_start(a, s);
+
+    PrintStringInternal(s, a);
+
+    va_end(a);
 
     ConsoleLock.Unlock();
 }
 
 // Outputs a string to the display but with "LOG" before it
-void Console::Log(const char* s) {
+void Console::Log(const char* s, ...) {
     ConsoleLock.Lock();
 
-    // FIXME: Add proper printf so this can be easier
-    PrintStringInternal("C[fg,6]LOGC[r,] ");
-    PrintStringInternal(s);
+    PrintStringInternal("C[fg,6]LOGC[r,] ", {});
+
+    va_list a;
+    va_start(a, s);
+
+    PrintStringInternal(s, a);
+
     Console::PrintChar('\n');
+
+    va_end(a);
 
     ConsoleLock.Unlock();
 }
