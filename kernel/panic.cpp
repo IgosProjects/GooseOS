@@ -17,30 +17,31 @@
  *	Copyright(c) 2026 EyeDev
 */
 
-#include <boot/framebuffer.hpp>
-#include <arch.hpp>
 #include <core.hpp>
 #include <console/console.hpp>
 
 using namespace GooseOS;
 
-// Kernel mode init function
-extern "C" void InitKernel() {
-	// This function is called by the ASM boot code. In here we initilize all the subsystems and start userspace
-	// But for now, we dont do much!
+// Stops execution and the CPU forever!
+void Core::Halt() {
+    asm volatile("cli");
+    asm volatile("hlt");
+}
 
-	// Call Arch::EarlyInit to setup the interrupts and other important architecture stuff
-	Arch::EarlyInit();
+// Causes a kernel panic and displays the screen
+// NOTE: Only call on CRITICAL issues!
+void Core::Panic(const char* r) {
+    Console::PrintString("C[c,0]\n========================\n\n");
+    Console::PrintString("KERNEL PANIC!\n");
+    Console::PrintString("\n========================\n\n");
+    Console::PrintString("GooseOS has run into a critical error and has to restart!\n");
+    Console::PrintString("Please make a new issue on Github so we can fix it.\n");
+    Console::PrintString("\n========================\n\n");
 
-	// Initilize the console
-	Graphics::Framebuffer* fb = GooseOS::Graphics::GetCurrentFramebuffer();
-	Console::Init(fb);
+    Console::PrintString(r);
+    Console::PrintChar('\n');
 
-	Arch::LateInit(); // Call the Arch::LateInit function to do not so critical stuff
+    Console::PrintString("\n========================\n\n");
 
-	Console::Log("Somehow survived divide by zero!");
-
-	for (;;) {
-		asm volatile("hlt");
-	}
+    Core::Halt();
 }

@@ -35,24 +35,23 @@ link_args = [
     '-nostdlib',
     '-static',
     '-fno-pie',
-    '-T', meson.current_source_dir() / linker_script   # FIXED: use linker_script variable
+    '-T', meson.current_source_dir() / linker_script
 ]
 
-# Find all source files
-sources = run_command(
-    'find', 'kernel', '-name', '*.cpp', '-o', '-name', '*.c', '-o', '-name', '*.asm',
+fs = import('fs')
+sources = []
+
+# Call a simple python command to find all files recursively
+find_src = run_command('python3', '-c', 
+    'import glob; import sys; [print(f) for ext in ["/**/*.cpp", "/**/*.c", "/**/*.asm"] for f in glob.glob("kernel" + ext, recursive=True)]',
     check: true
-).stdout().strip().split('\n')
+)
 
-# Handle empty find result
-if sources == ['']
-    sources = []
-endif
+sources = find_src.stdout().strip().split()
 
-# Build the kernel
 kernel = executable(
     'kernel.elf',
-    sources,
+    sources: sources,
     include_directories: incs,
     cpp_args: cpp_args,
     link_args: link_args,

@@ -21,10 +21,13 @@
 #include <console/console.hpp>
 #include <math.hpp>
 #include <utils.hpp>
+#include <console/serial.hpp>
 #include <console/font-8x8.h>
 #include <types.hpp>
 
 using namespace GooseOS;
+
+bl IsConsoleReady = kfalse;
 
 // This is the x86_64 implemenation of the console driver, the console driver needs to provide basic functions
 // Used to print to the display and such
@@ -46,15 +49,19 @@ u64 MinFontScale = 0;
 
 // Terminal color pallete
 
-Graphics::RGBColor TerminalPallete[7] = {
+Graphics::RGBColor TerminalPallete[8] = {
     {255, 0, 0}, // Red
     {0, 255, 0}, // Blue
     {0, 0, 255}, // Green
     {0, 0, 0}, // Black
     {255, 255, 255}, // White
-    {0, 72, 252}, // Cyan
-    {252, 223, 0} // Yellow
+    {0, 189, 252}, // Cyan
+    {252, 223, 0}, // Yellow
+    {0, 72, 252} // Darkblue
 };
+
+// Calculate the terminal pallete size
+constexpr u64 TerminalPaletteSize = sizeof(TerminalPallete) / sizeof(TerminalPallete[0]); 
 
 // INTERNAL CONSOLE CONFIG END
 
@@ -93,6 +100,8 @@ void DrawChar(Graphics::Framebuffer* fb, char c, Utils::Vector2 position) {
 
 // Prints a character to the display
 void Console::PrintChar(const char c) {
+    Serial::PrintChar(c);
+    
     // Handle newlines
     if (c == '\n') {
         CursorPosition.x = 0; // CR
@@ -116,84 +125,119 @@ void Console::PrintChar(const char c) {
     }
 }
 
+// INTERNAL TO DRIVER
+// Parses the styling data passed in
+const char* ParseStyling(const char* s) {
+    s++;
+    s++;
+
+    u64 clrvalue = 0; // What color in the pallete to use
+    u8 type = 0; // Internal type variable
+
+    u8 bufferindex = 0; // Index in type buffer
+    char typebuffer[2]; // Where to apply the color?(foreground or background)
+
+    // Scan for type(fg, bg)
+    while (*s != ',' && *s != '\0') {
+        typebuffer[bufferindex] = *s;
+
+        // Check if out of bounds
+        if (bufferindex >= 2) {
+            asm volatile("hlt"); // FIXME: Add proper panic
+        }
+
+        bufferindex++;
+        s++; // Increase string pointer
+    }
+
+    // If a reset tag was spotted, skip everything until the closing tag and reset everything
+    if (typebuffer[0] == 'r') {
+        // Skip everything until closing tag
+        while (*s != ']' && *s != '\0') {
+            s++;
+        }
+        s++;
+
+        // Set the default values
+        ConsoleConfiguration.BackgroundColor = {0, 0, 0};
+        ConsoleConfiguration.ForegroundColor = {255, 255, 255};
+
+        return s; // Continue with code execution
+    }
+
+    // If a clear tag was detected, clear the screen with the passed in color
+    // We will set type to 2 for this
+    if (typebuffer[0] == 'c') {
+        type = 2;
+    }
+
+    // Check if valid type, if not set to defualt(foreground)
+    if (((typebuffer[0] != 'f' && typebuffer[0] != 'b') && typebuffer[1] != 'g')) {
+        type = 0;
+        if (typebuffer[0] == 'c') type = 2;
+    }
+            
+    // Check if foreground or background
+    if (typebuffer[0] == 'f' && typebuffer[1] == 'g') {
+        type = 0;
+    } else if (typebuffer[0] == 'b' && typebuffer[1] == 'g') {
+        type = 1;
+    }
+
+    // Scan for color code
+    while (*s != ']' && *s != '\0') {
+        if (*s >= '0' && *s <= '9') {
+            clrvalue = clrvalue * 10 + (*s - '0');
+            }
+        if (*s == '\0') break; // Stop if end of string
+            s++;
+    };
+
+    s++; // Skip the ']' closing tag
+
+    // Now by all specifications ever written by humans, we shall not trust random input
+    // So we need to clamp it
+    u64 clrvalueclamped = Math::Clamp(0, TerminalPaletteSize, clrvalue);
+            
+    // Now we can safely set the color acording to the type
+    if (type == 0) {
+        ConsoleConfiguration.ForegroundColor = TerminalPallete[clrvalueclamped];
+    } else if (type == 1) {
+        ConsoleConfiguration.BackgroundColor = TerminalPallete[clrvalueclamped];
+    } else if (type == 2) {
+        // Here we will handle clearing the screen, we just loop thru all the pixels and done!
+        u64 fb_width = fb_ptr->width;
+        u64 fb_height = fb_ptr->height;
+        
+        // Draw all the pixels on the screen
+        for (u64 hi = 0; hi < fb_height; hi++) {
+            for (u64 wi = 0; wi < fb_width; wi++) {
+                Graphics::DrawPixel(fb_ptr, {wi, hi}, TerminalPallete[clrvalueclamped]);
+            }
+        }
+
+        // Set the background color of text cause it may look weird if not set
+        ConsoleConfiguration.BackgroundColor = TerminalPallete[clrvalueclamped];
+        CursorPosition.x = 0;
+        CursorPosition.y = 0;
+    }
+            
+    return s;
+}
+
 // Prints a string to the display
 void Console::PrintString(const char* s) {
+    if (!IsConsoleReady) {
+        Console::Init(Graphics::GetCurrentFramebuffer());
+        IsConsoleReady = ktrue;
+
+        return;
+    }
+
     while (*s) {
-        // Check for formatting, if these two characters apper start scanning for color codes
         if (*s == 'C' && *(s + 1) == '[') {
-            s++;
-            s++;
-
-            u64 clrvalue = 0; // What color in the pallete to use
-            u8 type = 0; // Internal type variable
-
-            u8 bufferindex = 0; // Index in type buffer
-            char typebuffer[2]; // Where to apply the color?(foreground or background)
-
-            // Scan for type(fg, bg)
-            while (*s != ',' && *s != '\0') {
-                typebuffer[bufferindex] = *s;
-
-                // Check if out of bounds
-                if (bufferindex >= 2) {
-                    asm volatile("hlt"); // FIXME: Add proper panic
-                }
-
-                bufferindex++;
-                s++; // Increase string pointer
-            }
-
-            // If a reset tag was spotted, skip everything until the closing tag and reset everything
-            if (typebuffer[0] == 'r') {
-                // Skip everything until closing tag
-                while (*s != ']' && *s != '\0') {
-                    s++;
-                }
-                s++;
-
-                // Set the default values
-                ConsoleConfiguration.BackgroundColor = {0, 0, 0};
-                ConsoleConfiguration.ForegroundColor = {255, 255, 255};
-
-                continue; // Continue with code execution
-            }
-
-            // Check if valid type, if not set to defualt(foreground)
-            if ((typebuffer[0] != 'f' && typebuffer[0] != 'b') && typebuffer[1] != 'g') {
-                type = 0;
-            }
-            
-            // Check if foreground or background
-            if (typebuffer[0] == 'f' && typebuffer[1] == 'g') {
-                type = 0;
-            } else if (typebuffer[0] == 'b' && typebuffer[1] == 'g') {
-                type = 1;
-            }
-
-            // Scan for color code
-            while (*s != ']' && *s != '\0') {
-                if (*s >= '0' && *s <= '9') {
-                    clrvalue = clrvalue * 10 + (*s - '0');
-                }
-
-                if (*s == '\0') break; // Stop if end of string
-                s++;
-            };
-
-            s++; // Skip the ']' closing tag
-
-            // Now by all specifications ever written by humans, we shall not trust random input
-            // So we need to clamp it
-            u64 clrvalueclamped = Math::Clamp(0, 4, clrvalue);
-                
-            // Now we can safely set the color acording to the type
-            if (type == 0) {
-                ConsoleConfiguration.ForegroundColor = TerminalPallete[clrvalueclamped];
-            } else if (type == 1) {
-                ConsoleConfiguration.BackgroundColor = TerminalPallete[clrvalueclamped];
-            }
-            
-            continue;
+            s = ParseStyling(s); // Parse the styling
+            continue; // Next character
         }
 
         PrintChar(*s); // Print the character
@@ -201,8 +245,20 @@ void Console::PrintString(const char* s) {
     }
 }
 
+// Outputs a string to the display but with "LOG" before it
+void Console::Log(const char* s) {
+    // FIXME: Add proper printf so this can be easier
+    Console::PrintString("C[fg,6]LOGC[r,] ");
+    Console::PrintString(s);
+    Console::PrintChar('\n');
+}
+
 // Initilizes the console driver, allows for printing
 void Console::Init(GooseOS::Graphics::Framebuffer* fb) {
+    if (IsConsoleReady) return;
+
+    Serial::Init();
+
     if (fb) {
         fb_ptr = fb; // Set the framebuffer pointer
     } else {

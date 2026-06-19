@@ -18,17 +18,29 @@
 ; *
 
 [BITS 64] ; We are in 64 bit long mode
-
 section .text ; The text section contains our code
-global _start
-extern InitKernel
 
-; Entry function called by the bootloader
-_start:
-    cli ; Disable interrupts so one cant randomly fire
-    call InitKernel ; Call the function defined in "init.cpp"
+global LoadGDT
 
-    ; If the kernel returned we should halt the CPU
+; Internal function to load the GDT
+LoadGDT:
+    lgdt [rdi] ; Load the GDT from the pointer passed in as first argument
 
-    cli
-    hlt
+    ; Set all standard data segment selectors to point to our Data Segment
+    mov ax, 0x10          
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+
+    ; Reset CS by using a far return
+    pop rsi ; Pop the return address
+    mov rax, rsp ; Store the original stack
+
+    push qword 0x10 ; Push SS(Stack Segment)
+    push rax ; Push stack pointer
+    pushfq ; Push RFLAGS
+    push qword 0x08 ; Push CS(Code Segment)
+    push rsi ; Push the return address back to the stack
+    iretq

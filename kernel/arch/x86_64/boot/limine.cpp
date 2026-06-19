@@ -36,6 +36,17 @@ extern "C" volatile struct limine_framebuffer_request framebuffer_request = {
     .revision = 0
 };
 
+static volatile struct limine_stack_size_request stack_size_request = {
+    .id = LIMINE_STACK_SIZE_REQUEST_ID,
+    .revision = 0,
+    .stack_size = 0x20000 // 128 KB of pure breathing room for our OS(i swear if this stack overflows i will throw my PC thru the window)
+};
+
+extern "C" volatile struct limine_mp_request mp_request = {
+    .id = LIMINE_MP_REQUEST_ID,
+    .revision = 0
+};
+
 // Finally, define the start and end markers for the Limine requests.
 // These can also be moved anywhere, to any .c file, as seen fit.
 

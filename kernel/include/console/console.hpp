@@ -40,6 +40,9 @@ namespace GooseOS::Console {
     // Initilizes the console driver, allows for printing
     void Init(GooseOS::Graphics::Framebuffer* fb);
 
+    // Outputs a string to the display but with "LOG" before it
+    void Log(const char* s);
+
     // Sets the console state to the passed in one
     void SetConsoleState(ConsoleState* state);
 }

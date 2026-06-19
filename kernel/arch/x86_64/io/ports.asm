@@ -18,17 +18,35 @@
 ; *
 
 [BITS 64] ; We are in 64 bit long mode
-
 section .text ; The text section contains our code
-global _start
-extern InitKernel
 
-; Entry function called by the bootloader
-_start:
-    cli ; Disable interrupts so one cant randomly fire
-    call InitKernel ; Call the function defined in "init.cpp"
+global outb
+global inb
+global outw
+global inw
 
-    ; If the kernel returned we should halt the CPU
+; Sends out a byte value on a port
+outb:
+    mov dx, di
+    mov al, sil
+    out dx, al ; Output the value
+    ret ; Return
 
-    cli
-    hlt
+; Reads a byte from a port
+inb:
+    mov dx, di
+    in al, dx ; Read a value from the port
+    ret ; Return
+
+; Outputs a 16 bit value to a port
+outw:
+    mov dx, di
+    mov ax, si
+    out dx, ax
+    ret
+
+; Reads a 16 bit value from a port
+inw:
+    mov dx, di
+    in ax, dx
+    ret
