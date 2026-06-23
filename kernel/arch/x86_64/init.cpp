@@ -23,12 +23,13 @@
 #include <cpu/core.hpp>
 #include <console/console.hpp>
 #include <limine/limine.h>
+#include <apic/apic.hpp>
 #include <cpu/gdt.hpp>
 
 using namespace GooseOS;
 extern volatile struct limine_mp_request mp_request; // Get the Limine MP request
 
-CPU::CoreContext CoreContextes[16]; // Allow up to 16 cores only!
+CPU::CoreContext CoreContextes[256]; // Allow up to 16 cores only!
 bl APsSafeToRun = kfalse; // Is the system ready to start up APs
 
 // Get the local APIC id, used detect APs
@@ -72,15 +73,10 @@ void APEntry(struct limine_mp_info* info) {
     LoadCoreContext(&CoreContextes[id]);
 
     WaitUntilGPReady();
+
+    // NOTE: The below code is WHERE everything should go! Its NOT smart to slap all the stuff below this function
+    // Cus it will break, severly!
     asm volatile("sti"); // Enable interrupts
-
-    if (info->processor_id == 1) {
-        Console::Log("Diving by zero on Core 1!");
-
-        volatile u8 a = 0;
-        volatile u8 b = 10;
-        volatile u8 c = b / a;
-    }
 
     Console::Log("Hi from AP %u!", info->processor_id);
     Core::Halt(); // Stop the AP!
@@ -101,6 +97,9 @@ void Arch::EarlyInit() {
     // Load the IDT(interrupt descriptor table)
     CPU::InitIDT();
     CPU::LoadIDT();
+
+    // Initilize the x2APIC(for IRQs and external interrupts)
+    CPU::APIC::InitLAPIC();
 
     asm volatile("sti"); // Enable interrupts
 }
@@ -127,6 +126,6 @@ void Arch::LateInit() {
 
     APsSafeToRun = ktrue;
 
-    Console::Log("Welcome to GooseOS on x86_64");
+    Console::OK("Welcome to GooseOS on x86_64");
     Console::Log("Finished Arch::LateInit!");
 }

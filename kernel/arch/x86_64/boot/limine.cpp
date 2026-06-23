@@ -47,6 +47,11 @@ extern "C" volatile struct limine_mp_request mp_request = {
     .revision = 0
 };
 
+extern "C" volatile struct limine_hhdm_request hhdm_request = {
+    .id = LIMINE_HHDM_REQUEST_ID,
+    .revision = 0
+};
+
 // Finally, define the start and end markers for the Limine requests.
 // These can also be moved anywhere, to any .c file, as seen fit.
 

@@ -1,0 +1,69 @@
+/*
+ *	This file is part of gooseOS.
+ *
+ *	gooseOS is free software: you can redistribute it and/or modify
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation, either version 3 of the License, or
+ *	(at your option) any later version.
+ *
+ *	gooseOS is distributed in the hope that it will be useful,
+ *	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *	GNU General Public License for more details.
+ *
+ *	You should have received a copy of the GNU General Public License
+ *	along with gooseOS.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *	Copyright(c) 2026 EyeDev
+*/
+
+// This file is responsible for starting up the xAPIC(Legacy APIC), if its not included,
+// Interrupts WILL NOT WORK! As so with the entire OS!
+
+#include <apic/apic.hpp>
+#include <limine/limine.h>
+#include <types.hpp>
+#include <core.hpp>
+
+using namespace GooseOS;
+
+// Initilizes the core specific Local APIC chip
+// Can be safely called multiple times for each core! 
+void CPU::APIC::InitLAPIC() {
+    u32 ecx;
+    
+    // Check if the x2APIC is even supported
+    asm volatile("cpuid" : "=c"(ecx) : "a"(1) : "ebx", "edx");
+
+    // Check if xAPIC supported, if not return
+    if (!(ecx & (1 << 21))) {
+        Core::Panic("This system does not support the x2APIC! Cannot continue execution!");
+        Core::Panic("Panic failed while checking for x2APIC");
+    }
+
+    // This code only runs when the x2APIC is supported
+    // We can now initilize it and make the CPU start listening to commands
+
+    // Read the APIC base address
+    u32 low, high;
+    asm volatile("rdmsr" : "=a"(low), "=d"(high) : "c"(0x1B));
+
+    // Enable both the global APIC and the x2APIC
+    low |= (1 << 11) | (1 << 10);
+
+    // Write it back and flip the CPU into x2APIC mode
+    asm volatile("wrmsr" : : "c"(0x1B), "a"(low), "d"(high) : "memory");
+}
+
+extern limine_hhdm_request hhdm_request;
+
+// Initilizes the motherboard chip I/O APIC
+// Must be called ONCE on the GP
+void CPU::APIC::InitIOAPIC() {
+    // Use the "assert" function to check wheter Limine returned an HHDM pointer
+    assert((hhdm_request.response == nullptr), "Failed to recive HHDM for Limine!");
+    
+    u64 HHDMOffset = hhdm_request.response->offset; // Get the offset from Limine
+
+    
+}
