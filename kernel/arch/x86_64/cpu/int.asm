@@ -21,8 +21,10 @@
 
 section .text ; The text section contains our code
 global ISREntry
+global IRQEntry
 global StubEntry
 extern ISRHandler
+extern IRQHandler
 global idt_load
 extern IDTPtr
 
@@ -52,9 +54,14 @@ ISREntry:
     push r14
     push r15
 
+    mov rbp, rsp ; Save original RSP into RBP
+    and rsp, -16 ; Align RSP to the closeest 16 bit value
+
     ; Now the stack is ready for C++, so we can call our ISRHandler function defined in C++
-    mov rdi, rsp ; Push the stack to C++
+    mov rdi, rbp ; Push the stack to C++
     call ISRHandler
+
+    mov rsp, rbp ; Restore RSP
 
     ; Restore the registers
     pop r15
@@ -74,6 +81,51 @@ ISREntry:
     pop rax
 
     add rsp, 16 ; Remove error code and interrupt number from stack
+    iretq ; Return from interrupt
+
+; This function is called by the IOAPIC when an external interrupt happens(for example, keyboard)
+IRQEntry:
+    ; Save registers
+    ;push rax
+    ;push rbx
+    ;push rcx
+    ;push rdx
+    ;push rsi
+    ;push rdi
+    ;push rbp
+    ;push r8
+    ;push r9
+    ;push r10
+    ;push r11
+    ;push r12
+    ;push r13
+    ;push r14
+    ;push r15
+
+    ; Now the stack is ready for C++, so we can call our ISRHandler function defined in C++
+    ;mov rdi, rsp ; Push the stack to C++
+    
+    ; Due to problems lets not pass the stack or touch it at all
+    call IRQHandler
+
+    ; Restore the registers
+    ;pop r15
+    ;pop r14
+    ;pop r13
+    ;pop r12
+    ;pop r11
+    ;pop r10
+    ;pop r9
+    ;pop r8
+    ;pop rbp
+    ;pop rdi
+    ;pop rsi
+    ;pop rdx
+    ;pop rcx
+    ;pop rbx
+    ;pop rax
+
+    ;add rsp, 16 ; Remove interrupt number from stack
     iretq ; Return from interrupt
 
 ; This is used in testing to prevent the CPU freaking out before IRQs are registered.
@@ -131,3 +183,18 @@ isr_no_err_stub 28 ; ISR 28
 isr_err_stub 29 ; ISR 29
 isr_err_stub 30 ; ISR 30
 isr_no_err_stub 31 ; Reserved for future use
+
+; Used for external interrupts(IRQs)
+%macro irq 1
+global irq%1
+
+irq%1:
+    ;push qword 0
+    ;push qword %1 ; Push interrupt number
+    jmp IRQEntry
+%endmacro
+
+; Since the IOAPIC lets us map anything to anywhere im just gonna do the old way
+; IRQ 0 is timer, while IRQ 1 is keyboard and so on
+irq 32 ; IRQ 0(Timer)
+irq 33 ; IRQ 1(Keyboard)

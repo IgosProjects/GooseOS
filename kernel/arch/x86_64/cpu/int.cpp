@@ -23,6 +23,7 @@
 
 #include <core.hpp>
 #include <console/console.hpp>
+#include <apic/apic.hpp>
 
 // Used to get ISR names when fired
 const char* ISRNames[32] = {
@@ -85,7 +86,15 @@ u32 GetCoreIDViaGS() {
 
 // Handler for CPU issued ISR exceptions
 extern "C" void ISRHandler(interrupt_frame* int_frame) {
-    u64 CoreID = GetCoreIDViaGS();
+    //u64 CoreID = GetCoreIDViaGS();
+    u64 CoreID = 0;
 
     Core::Panic("Core %u has encountered a %s", CoreID, ISRNames[int_frame->int_no]); // Panic with the correct name and core
+}
+
+// Handler for external device interrupts
+extern "C" void IRQHandler() {
+    Console::OK("Recived IRQ!");
+
+    CPU::APIC::SendEOI();
 }

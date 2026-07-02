@@ -18,13 +18,17 @@
 */
 
 #pragma once
+#include <types.hpp>
 
 namespace GooseOS::CPU::APIC {
     // Initilizes the core specific Local APIC chip
     // Can be safely called multiple times for each core! 
     void InitLAPIC();
 
+    // Sends End Of Interrupt to the LAPIC, ONLY CALL IN IRQs!
+    void SendEOI();
+
     // Initilizes the motherboard chip I/O APIC
     // Must be called ONCE on the GP
-    void InitIOAPIC();
+    void InitIOAPIC(u64 HHDMOffset);
 }

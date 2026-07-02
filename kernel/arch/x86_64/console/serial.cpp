@@ -25,6 +25,21 @@ using namespace GooseOS;
 
 u16 COM1 = 0x3F8; // First COM port on an x86 PC
 
+// Prints a character to the serial port
+void Console::Serial::PrintChar(const char c) {
+    while ((IO::inb(COM1 + 5) & 0x20) == 0); // Wait until serial is safe to write
+    IO::outb(COM1, c); // Send character
+}
+
+// Prints a string to serial(unformatted)
+// INTERNAL TO DRIVER
+void SerialPrintString(const char* s) {
+    while (*s) {
+        Console::Serial::PrintChar(*s);
+        s++;
+    }
+}
+
 // Initilizes the serial subsystem
 void Console::Serial::Init() {
     IO::outb(COM1 + 1, 0); // Disable UART interrupts by writing 0 to COM1 + 1
@@ -39,10 +54,7 @@ void Console::Serial::Init() {
 
     IO::outb(COM1 + 2, 0xC7); // Enable FIFO
     IO::outb(COM1 + 2, 0x08); // Enable modem control
-}
 
-// Prints a character to the serial port
-void Console::Serial::PrintChar(const char c) {
-    while ((IO::inb(COM1 + 5) & 0x20) == 0); // Wait until serial is safe to write
-    IO::outb(COM1, c); // Send character
+
+    SerialPrintString("\033[2J\033[H"); // Clear the serial buffer and display
 }

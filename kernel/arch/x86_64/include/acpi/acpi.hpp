@@ -55,6 +55,14 @@ namespace GooseOS::ACPI {
         u64 tables[]; // Array of 64 bit pointers to ACPI tables
     };
 
+    // APIC info table
+    struct __attribute__((packed)) MADT {
+        ACPIHeader header;
+        u32 local_apic_address; // Address of the local APIC
+        u32 flags; // Global flags
+        u8 entries[]; // The raw byte stream of data starts here
+    };
+
     // Returns the pointer to a specific ACPI table based on the 4 char signature
     void* GetTable(RSDP* rsdp, u64 hhdm_offset, const char* sig);
 }

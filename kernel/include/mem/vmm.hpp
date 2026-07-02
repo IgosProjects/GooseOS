@@ -20,20 +20,15 @@
 #pragma once
 #include <types.hpp>
 
-// Checks if the passed in condition returns "true" if so, it will not panic
-// If the condition returns "false" it will kernel panic
-#define assert(condition, message) \
-    do { \
-        if (!(condition)) { \
-            GooseOS::Core::Panic(message); \
-        } \
-    } while (0)
-    
-namespace GooseOS::Core {
-    // Causes a kernel panic and displays the screen
-    // NOTE: Only call on CRITICAL issues!
-    [[noreturn]] void Panic(const char* r, ...);
+// VMM(Virtual Memory Manager) namespace
+namespace GooseOS::Memory::VMM {
+    typedef u64 pt_entry;
 
-    // Stops execution and the CPU forever!
-    void Halt();
+    // Entry types
+    constexpr u64 PTE_PRESENT  = (1ULL << 0);
+    constexpr u64 PTE_WRITABLE = (1ULL << 1);
+    constexpr u64 PTE_USER     = (1ULL << 2);
+
+    // Maps a physical address to a virtual one, if not used on non-mapped addresses it will Page Fault
+    void MapPage(pt_entry* pml4_virt, u64 virt_addr, u64 phys_addr, u64 flags, u64 hhdm_offset);
 }

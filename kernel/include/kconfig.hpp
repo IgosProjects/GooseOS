@@ -20,20 +20,9 @@
 #pragma once
 #include <types.hpp>
 
-// Checks if the passed in condition returns "true" if so, it will not panic
-// If the condition returns "false" it will kernel panic
-#define assert(condition, message) \
-    do { \
-        if (!(condition)) { \
-            GooseOS::Core::Panic(message); \
-        } \
-    } while (0)
-    
-namespace GooseOS::Core {
-    // Causes a kernel panic and displays the screen
-    // NOTE: Only call on CRITICAL issues!
-    [[noreturn]] void Panic(const char* r, ...);
+// This file handles kernel configuration, for example you can make the kernel headless or no output at all!
+// Use only framebuffer or only serial and such
 
-    // Stops execution and the CPU forever!
-    void Halt();
-}
+// DISPLAY
+#define KRNL_USE_FB // Comment out if you want the kernel to not use framebuffer
+#define KRNL_USE_SERIAL // Comment out if you dont want the kernel writing to serial

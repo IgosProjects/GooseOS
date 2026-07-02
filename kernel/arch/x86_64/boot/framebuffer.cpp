@@ -29,28 +29,28 @@ bl fb_ready = kfalse; // Is the framebuffer safe to use?
 static struct GooseOS::Graphics::Framebuffer fb;
 static struct GooseOS::Graphics::Framebuffer fb_ptr;
 
+// Replacment for the lambda function
+static inline uint32_t ScaleColorChannel(u8 value, u8 bits) {
+    if (bits == 0)
+        return 0;
+
+    uint32_t max = (1u << bits) - 1;
+    return (static_cast<uint32_t>(value) * max) / 255;
+}
+
 // Generates the color to be used on the specified framebuffer, using the passed in RGB values
 // INTERNAL TO THE DRIVER!
 uint32_t MakeColor(const Graphics::Framebuffer* fb, u8 r, u8 g, u8 b) {
-    auto scale = [](u8 value, u8 bits) -> uint32_t
-    {
-        if (bits == 0)
-            return 0;
-
-        uint32_t max = (1u << bits) - 1;
-        return (static_cast<uint32_t>(value) * max) / 255;
-    };
-
     uint32_t red =
-        scale(r, fb->red_mask_size)
+        ScaleColorChannel(r, fb->red_mask_size)
         << fb->red_mask_shift;
 
     uint32_t green =
-        scale(g, fb->green_mask_size)
+        ScaleColorChannel(g, fb->green_mask_size)
         << fb->green_mask_shift;
 
     uint32_t blue =
-        scale(b, fb->blue_mask_size)
+        ScaleColorChannel(b, fb->blue_mask_size)
         << fb->blue_mask_shift;
 
     return red | green | blue;

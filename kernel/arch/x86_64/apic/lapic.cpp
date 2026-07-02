@@ -21,6 +21,8 @@
 // Interrupts WILL NOT WORK! As so with the entire OS!
 
 #include <apic/apic.hpp>
+#include <acpi/acpi.hpp>
+#include <console/console.hpp>
 #include <limine/limine.h>
 #include <types.hpp>
 #include <core.hpp>
@@ -55,15 +57,11 @@ void CPU::APIC::InitLAPIC() {
     asm volatile("wrmsr" : : "c"(0x1B), "a"(low), "d"(high) : "memory");
 }
 
-extern limine_hhdm_request hhdm_request;
+// Sends End Of Interrupt to the LAPIC, ONLY CALL IN IRQs!
+void CPU::APIC::SendEOI() {
+    u32 low = 0;
+    u32 high = 0;
 
-// Initilizes the motherboard chip I/O APIC
-// Must be called ONCE on the GP
-void CPU::APIC::InitIOAPIC() {
-    // Use the "assert" function to check wheter Limine returned an HHDM pointer
-    assert((hhdm_request.response == nullptr), "Failed to recive HHDM for Limine!");
-    
-    u64 HHDMOffset = hhdm_request.response->offset; // Get the offset from Limine
-
-    
+    // MSR 0x80B is the x2APIC End Of Interrupt register
+    asm volatile("wrmsr" :: "a"(low), "d"(high), "c"(0x80B) : "memory");
 }

@@ -21,6 +21,7 @@
 #include <limine/limine.h>
 
 // This file defines the Limine header, it is copied from the OSDev wiki(https://wiki.osdev.org/Limine_Bare_Bones) all credit goes to the author
+// It was also edited by me for GooseOS! 
 
 __attribute__((used, section(".limine_requests")))
 static volatile u64 limine_base_revision[] = LIMINE_BASE_REVISION(6);
@@ -36,19 +37,34 @@ extern "C" volatile struct limine_framebuffer_request framebuffer_request = {
     .revision = 0
 };
 
+__attribute__((used, section(".limine_requests")))
 static volatile struct limine_stack_size_request stack_size_request = {
     .id = LIMINE_STACK_SIZE_REQUEST_ID,
     .revision = 0,
     .stack_size = 0x20000 // 128 KB of pure breathing room for our OS(i swear if this stack overflows i will throw my PC thru the window)
 };
 
+__attribute__((used, section(".limine_requests")))
 extern "C" volatile struct limine_mp_request mp_request = {
     .id = LIMINE_MP_REQUEST_ID,
     .revision = 0
 };
 
+__attribute__((used, section(".limine_requests")))
 extern "C" volatile struct limine_hhdm_request hhdm_request = {
     .id = LIMINE_HHDM_REQUEST_ID,
+    .revision = 0
+};
+
+__attribute__((used, section(".limine_requests")))
+extern "C" volatile struct limine_rsdp_request rsdp_request = {
+    .id = LIMINE_RSDP_REQUEST_ID,
+    .revision = 0
+};
+
+__attribute__((used, section(".limine_requests")))
+extern "C" volatile struct limine_memmap_request memmap_request = {
+    .id = LIMINE_MEMMAP_REQUEST_ID,
     .revision = 0
 };
 

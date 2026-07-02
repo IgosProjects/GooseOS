@@ -27,4 +27,14 @@ namespace GooseOS::Utils {
         u64 x;
         u64 y;
     };
+
+    // Sets the bytes at DEST to amount of bytes from CH specifed by COUNT
+    // Aka, fancy memory set stuff
+    inline void* memset(void* dest, int ch, size count) {
+        u8* ptr = (u8*)dest;
+        for (size i = 0; i < count; i++) {
+            ptr[i] = (u8)ch;
+        }
+        return dest;
+    }
 }

@@ -37,3 +37,7 @@ using uintptr_t = unsigned long long;
 #elif defined(__i386__)
 using uintptr_t = unsigned int;
 #endif
+
+// Unsigned and signed size_t variables
+using size = unsigned long long;
+using ssize = signed long long;

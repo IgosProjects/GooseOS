@@ -36,6 +36,8 @@ extern "C" void InitKernel() {
 	Graphics::Framebuffer* fb = GooseOS::Graphics::GetCurrentFramebuffer();
 	Console::Init(fb);
 
+	Console::INFO("Framebuffer Address: 0x%x", fb->addr);
+
 	Arch::LateInit(); // Call the Arch::LateInit function to do not so critical stuff
 
 	for (;;) {

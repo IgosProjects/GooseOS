@@ -19,15 +19,19 @@
 
 #include <arch.hpp>
 #include <core.hpp>
+#include <mem/pmm.hpp>
+#include <mem/vmm.hpp>
 #include <cpu/idt.hpp>
 #include <cpu/core.hpp>
 #include <console/console.hpp>
 #include <limine/limine.h>
 #include <apic/apic.hpp>
 #include <cpu/gdt.hpp>
+#include <acpi/acpi.hpp>
 
 using namespace GooseOS;
-extern volatile struct limine_mp_request mp_request; // Get the Limine MP request
+extern "C" volatile struct limine_mp_request mp_request; // Get the Limine MP request
+extern limine_hhdm_request hhdm_request; // Get the Limine HHDM request
 
 CPU::CoreContext CoreContextes[256]; // Allow up to 16 cores only!
 bl APsSafeToRun = kfalse; // Is the system ready to start up APs
@@ -63,6 +67,7 @@ void LoadCoreContext(CPU::CoreContext* context) {
 
 // Waits until GP is ready, then starts executes AP code
 void APEntry(struct limine_mp_info* info) {
+    // Here is where EARLY CORE init goes! Not normal code
     CPU::InitGDT();
     CPU::LoadIDT();
 
@@ -72,10 +77,13 @@ void APEntry(struct limine_mp_info* info) {
     CoreContextes[id].LapicID = info->lapic_id;
     LoadCoreContext(&CoreContextes[id]);
 
-    WaitUntilGPReady();
+    // Initilize the x2APIC(for IRQs and external interrupts)
+    CPU::APIC::InitLAPIC();
+
+    WaitUntilGPReady(); // Wait until its safe and the GP is done loading
 
     // NOTE: The below code is WHERE everything should go! Its NOT smart to slap all the stuff below this function
-    // Cus it will break, severly!
+    // Cause it will break, severly!
     asm volatile("sti"); // Enable interrupts
 
     Console::Log("Hi from AP %u!", info->processor_id);
@@ -97,9 +105,44 @@ void Arch::EarlyInit() {
     // Load the IDT(interrupt descriptor table)
     CPU::InitIDT();
     CPU::LoadIDT();
+    
+    // Use the "assert" function to check wheter Limine returned an HHDM pointer
+    u64 HHDMOffset = hhdm_request.response->offset; // Get the offset from Limine
+    
+    // FIX ME: Fix the assert, its allways false idk why
+    // FIXED BY ME: I fixed it! Somehow but i did!
+    assert((hhdm_request.response->offset != 0), "IOAPIC: Failed to recive HHDM from Limine!");
+
+    // Initilize the PMM and VMM so we can correctly map pages
+    Memory::PMM::Init(HHDMOffset);
+
+    u64 modern_pml4_phys = (u64)Memory::PMM::AllocatePage();
+
+    // Zero it out
+    Memory::VMM::pt_entry* modern_pml4_virt = (Memory::VMM::pt_entry*)(modern_pml4_phys + HHDMOffset);
+    for(int i = 0; i < 512; i++) {
+        modern_pml4_virt[i] = 0;
+    }
+
+    u64 cr3_val;
+    asm volatile("mov %%cr3, %0" : "=r"(cr3_val));
+
+    // Clone limines mapping into our table
+    Memory::VMM::pt_entry* old_pml4_virt = (Memory::VMM::pt_entry*)((cr3_val & 0x000FFFFFFFFFF000ULL) + HHDMOffset);
+
+    // Copying entries 256 through 511 covers the higher half mappings safely
+    for(int i = 256; i < 512; i++) {
+        modern_pml4_virt[i] = old_pml4_virt[i];
+    }
+
+    // Use our custom page table insteaad of Limine's
+    asm volatile("mov %0, %%cr3" :: "r"(modern_pml4_phys) : "memory");
 
     // Initilize the x2APIC(for IRQs and external interrupts)
     CPU::APIC::InitLAPIC();
+
+    // Initilize the IOAPIC for routing interrupts to cores
+    CPU::APIC::InitIOAPIC(HHDMOffset);
 
     asm volatile("sti"); // Enable interrupts
 }

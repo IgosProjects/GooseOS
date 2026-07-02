@@ -17,9 +17,10 @@
  *	Copyright(c) 2026 EyeDev
 */
 
-// External ISR functions
+// External interrupt functions
 // Tell C++ to expect raw, unmangled C/Assembly names
 extern "C" {
+    // ISRs
     void isr0();
     void isr1();
     void isr2();
@@ -54,6 +55,10 @@ extern "C" {
     void isr31();
 
     void StubEntry();
+
+    // IRQs
+    void irq32();
+    void irq33();
 }
 
 // Array of all the ISR handlers that are called upon exception
@@ -62,6 +67,11 @@ void (*ISRHandlers[])() = {
     isr11, isr12, isr13, isr14, isr15, isr16, isr17, isr18, isr19, isr20,
     isr21, isr22, isr23, isr24, isr25, isr26, isr27, isr28, isr29, isr30,
     isr31
+};
+
+// Array of all IRQ handlers called upon external interrupt
+void (*IRQHandlers[])() = {
+    irq32, irq33
 };
 
 #include <cpu/idt.hpp>
@@ -100,15 +110,21 @@ void CPU::InitIDT() {
     // We can construct an IDT table very simply!
 
     // Set all the ISRs
-    for (u8 i = 0; i < 31; i++) {
+    for (u8 i = 0; i < 32; i++) {
         //Console::Log("Writing IDT entry for ISR!");
        
-        u64 handler_addr = reinterpret_cast<u64>(ISRHandlers[i]);
+        u64 handler_addr = reinterpret_cast<u64>(ISRHandlers[i]);;
+        SetIDTGate(i, handler_addr);
+    }
+
+    // Set all the IRQs
+    for (u8 i = 32; i < 34; i++) {
+        u64 handler_addr = reinterpret_cast<u64>(IRQHandlers[i - 32]);
         SetIDTGate(i, handler_addr);
     }
 
     // Set all the the others to be stubs
-    for (u8 i = 32; i < 255; i++) {
+    for (u8 i = 34; i < 255; i++) {
         //Console::Log("Writing IDT entry for ISR!");
        
         u64 handler_addr = reinterpret_cast<u64>(StubEntry);
