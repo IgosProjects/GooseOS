@@ -110,6 +110,9 @@ void Console::PrintChar(const char c) {
     
     #ifdef KRNL_USE_FB
 
+    // Calculate the max amount of text rows that can be on screen
+    u64 MaxTextRows = fb_ptr->height / (8 * ConsoleConfiguration.FontScale);
+
     // Handle newlines
     if (c == '\n') {
         CursorPosition.x = 0; // CR
@@ -297,43 +300,6 @@ void Console::EmergencyUnlock() {
     ConsoleLock.Unlock(); // INSTANT UNLOCK!
 }
 
-// Scrolls the passed in framebuffer pointer by a certain amount of pixels
-// INTERNAL TO DRIVER
-void ScrollFramebuffer(u64* fb, int width, int height, int scroll_px) {
-    if (scroll_px <= 0 || scroll_px >= height) return;
-
-    size row_bytes = width * sizeof(u64);
-    size scroll_bytes = scroll_px * row_bytes;
-    size total_bytes = height * row_bytes;
-
-    u8* base = (u8*)fb;
-
-    u8* dst = base;
-    u8* src = base + scroll_bytes;
-    size fbsize = total_bytes - scroll_bytes;
-
-    // memmove
-    if (dst < src) {
-        // forward copy (safe when src is ahead of dst)
-        for (size i = 0; i < size; i++) {
-            dst[i] = src[i];
-        }
-    } else {
-        // backward copy
-        for (size i = size; i > 0; i--) {
-            dst[i - 1] = src[i - 1];
-        }
-    };
-
-    // ---- clear bottom ----
-    u64* clear_start = fb + (height - scroll_px) * width;
-    size clear_pixels = scroll_px * width;
-
-    for (size i = 0; i < clear_pixels; i++)
-        clear_start[i] = 0x0000000000000000ULL;
-}
-
-
 // INTERNAL TO DRIVER
 // Prints a string to the display
 // Doesnt lock, that has to be done in other functions
@@ -349,6 +315,8 @@ void Console::PrintStringInternal(const char* s, va_list args) {
             #ifdef KRNL_USE_FB
             s = ParseStyling(s); // Parse the styling
             #else
+                // This only runs if the kernel doesnt use framebuffer, it skips all styling
+
                 s += 2; // Skip 'C' and '['
                 while (*s != ']' && *s != '\0') {
                     s++;
