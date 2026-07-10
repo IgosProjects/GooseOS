@@ -31,4 +31,7 @@ namespace GooseOS::CPU::APIC {
     // Initilizes the motherboard chip I/O APIC
     // Must be called ONCE on the GP
     void InitIOAPIC(u64 HHDMOffset);
+
+    // Sends an EOI(End Of Interrupt) to the IOAPIC
+    void SendIOAPICEOI();
 }

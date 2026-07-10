@@ -86,46 +86,46 @@ ISREntry:
 ; This function is called by the IOAPIC when an external interrupt happens(for example, keyboard)
 IRQEntry:
     ; Save registers
-    ;push rax
-    ;push rbx
-    ;push rcx
-    ;push rdx
-    ;push rsi
-    ;push rdi
-    ;push rbp
-    ;push r8
-    ;push r9
-    ;push r10
-    ;push r11
-    ;push r12
-    ;push r13
-    ;push r14
-    ;push r15
+    push rax
+    push rbx
+    push rcx
+    push rdx
+    push rsi
+    push rdi
+    push rbp
+    push r8
+    push r9
+    push r10
+    push r11    
+    push r12
+    push r13
+    push r14
+    push r15
 
     ; Now the stack is ready for C++, so we can call our ISRHandler function defined in C++
     ;mov rdi, rsp ; Push the stack to C++
     
-    ; Due to problems lets not pass the stack or touch it at all
+    mov rdi, rsp ; Pass the stack to C++
     call IRQHandler
 
     ; Restore the registers
-    ;pop r15
-    ;pop r14
-    ;pop r13
-    ;pop r12
-    ;pop r11
-    ;pop r10
-    ;pop r9
-    ;pop r8
-    ;pop rbp
-    ;pop rdi
-    ;pop rsi
-    ;pop rdx
-    ;pop rcx
-    ;pop rbx
-    ;pop rax
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop r11
+    pop r10
+    pop r9
+    pop r8
+    pop rbp
+    pop rdi
+    pop rsi
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
 
-    ;add rsp, 16 ; Remove interrupt number from stack
+    add rsp, 16 ; Remove interrupt number and error code from stack
     iretq ; Return from interrupt
 
 ; This is used in testing to prevent the CPU freaking out before IRQs are registered.
@@ -189,8 +189,8 @@ isr_no_err_stub 31 ; Reserved for future use
 global irq%1
 
 irq%1:
-    ;push qword 0
-    ;push qword %1 ; Push interrupt number
+    push qword 0
+    push qword %1 ; Push interrupt number
     jmp IRQEntry
 %endmacro
 

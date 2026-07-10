@@ -45,6 +45,7 @@ struct __attribute__((packed)) MADTEntryIOAPIC {
 };
 
 MADTEntryIOAPIC* IOAPICData; // Used to store the IOAPIC data later on
+u64 IOAPICAddress;
 
 #define IOAPIC_REGSEL  0x00 // Register select
 #define IOAPIC_IOWIN   0x10 // IO window(data)
@@ -66,8 +67,12 @@ void ParseMADT(struct ACPI::MADT* madt, u64 hhdm_offset) {
                 break;
             }
             case 1: { // IOAPIC
-                // Store the IOAPIC info in our pointer for later
-                IOAPICData = (MADTEntryIOAPIC*)current_entry;
+                // Force raw integer addition inside the parentheses first, then cast the result
+                MADTEntryIOAPIC* FoundIOAPIC = (MADTEntryIOAPIC*)(current_entry);
+    
+                if (FoundIOAPIC->GlobalSystemInterruptBase == 0) {
+                    IOAPICData = FoundIOAPIC;
+                }
 
                 break;
             }
@@ -171,7 +176,7 @@ void CPU::APIC::InitIOAPIC(u64 HHDMOffset) {
     Console::INFO("IOAPIC: IOAPIC info");
     Console::INFO("IOAPIC: GlobalSystemInterruptBase: 0x%x IOAPIC_ID: 0x%x IOAPICAddress: 0x%x", IOAPICData->GlobalSystemInterruptBase, IOAPICData->IOAPIC_ID, IOAPICData->IOAPICAddress);
 
-    u64 IOAPICAddress = IOAPICData->IOAPICAddress + HHDMOffset;
+    IOAPICAddress = IOAPICData->IOAPICAddress + HHDMOffset;
     u64 PhysAddress = IOAPICData->IOAPICAddress;
 
     // Get the PML4 virutal address
@@ -186,10 +191,13 @@ void CPU::APIC::InitIOAPIC(u64 HHDMOffset) {
 
     // Now lets map the IOAPIC in the page tables
     Memory::VMM::MapPage(pml4_virt, IOAPICAddress, PhysAddress, GooseOS::Memory::VMM::PTE_WRITABLE | GooseOS::Memory::VMM::PTE_WRITABLE | (1ULL << 3) | (1ULL << 4), HHDMOffset);
-    
-    // Now set the needed redirects
-    //SetRedirectEntry(IOAPICAddress, 1, 0x20, 0);
-    MaskIOAPICPin(1, IOAPICAddress);
 
-    SetRedirectEntry(IOAPICAddress, 2, 0x21, 0); // Redirect pin 2(keyboard) to entry 32(0x21) in the IDT on core 0(GP)
+    // Now set the needed redirects
+    SetRedirectEntry(IOAPICAddress, 2, 32, 0);
+    SetRedirectEntry(IOAPICAddress, 1, 33, 0); // Redirect pin 2(keyboard) to entry 32(0x21) in the IDT on core 0(GP)
+}
+
+// Sends an EOI(End Of Interrupt) to the IOAPIC
+void CPU::APIC::SendIOAPICEOI() {
+    IOAPICWrite(IOAPICAddress, 0x40, 33); // Write EOI to register 0x40
 }

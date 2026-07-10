@@ -23,6 +23,7 @@
 
 #include <core.hpp>
 #include <console/console.hpp>
+#include <io/ports.hpp>
 #include <apic/apic.hpp>
 
 // Used to get ISR names when fired
@@ -93,8 +94,14 @@ extern "C" void ISRHandler(interrupt_frame* int_frame) {
 }
 
 // Handler for external device interrupts
-extern "C" void IRQHandler() {
-    Console::OK("Recived IRQ!");
+extern "C" void IRQHandler(interrupt_frame* int_frame) {
+    if (int_frame->int_no == 32) {
+        // Timer tick
+        Console::PrintChar('t');
+    } else if (int_frame->int_no == 33) {
+        // Key press
+        Console::OK("Recived key press!");
+    }
 
     CPU::APIC::SendEOI();
 }

@@ -110,9 +110,6 @@ void Console::PrintChar(const char c) {
     
     #ifdef KRNL_USE_FB
 
-    // Calculate the max amount of text rows that can be on screen
-    u64 MaxTextRows = fb_ptr->height / (8 * ConsoleConfiguration.FontScale);
-
     // Handle newlines
     if (c == '\n') {
         CursorPosition.x = 0; // CR

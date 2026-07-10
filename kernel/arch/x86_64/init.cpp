@@ -20,6 +20,7 @@
 #include <arch.hpp>
 #include <core.hpp>
 #include <mem/pmm.hpp>
+#include <io/ports.hpp>
 #include <mem/vmm.hpp>
 #include <cpu/idt.hpp>
 #include <cpu/core.hpp>
@@ -89,6 +90,28 @@ void APEntry(struct limine_mp_info* info) {
     Console::Log("Hi from AP %u!", info->processor_id);
     Core::Halt(); // Stop the AP!
 }
+
+void ClearAndEnablePS2() {
+    // Wait for the controller to be ready to accept a command
+    while (IO::inb(0x64) & 2);
+    IO::outb(0x64, 0x20); // Command 0x20: Read Configuration Byte
+
+    // Wait for the data to come back
+    while (!(IO::inb(0x64) & 1));
+    u8 config = IO::inb(0x60);
+
+    // Set Bit 0 (Enable Keyboard Interrupts)
+    config |= 0x01; 
+
+    // Tell the controller we want to write the byte back
+    while (IO::inb(0x64) & 2);
+    IO::outb(0x64, 0x60); // Command 0x60: Write Configuration Byte
+
+    // Write the modified configuration
+    while (IO::inb(0x64) & 2);
+    IO::outb(0x60, config);
+}
+
 
 // Initilizes the needed architecture specific functions(CPU, interrupts, UART, etc, etc)
 void Arch::EarlyInit() {

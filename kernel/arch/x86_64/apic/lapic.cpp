@@ -55,6 +55,13 @@ void CPU::APIC::InitLAPIC() {
 
     // Write it back and flip the CPU into x2APIC mode
     asm volatile("wrmsr" : : "c"(0x1B), "a"(low), "d"(high) : "memory");
+
+    // Clear the TPR register
+    asm volatile("wrmsr" : : "c"(0x808), "a"(0), "d"(0) : "memory");
+
+    // Set the sporious enable value
+    u32 spurious_val = 0x1FF; // Bit 8 turned on and vector 0xFF
+    asm volatile("wrmsr" : : "c"(0x80F), "a"(spurious_val), "d"(0) : "memory");
 }
 
 // Sends End Of Interrupt to the LAPIC, ONLY CALL IN IRQs!
@@ -64,4 +71,7 @@ void CPU::APIC::SendEOI() {
 
     // MSR 0x80B is the x2APIC End Of Interrupt register
     asm volatile("wrmsr" :: "a"(low), "d"(high), "c"(0x80B) : "memory");
+
+    // Send an EOI to the IOAPIC
+    CPU::APIC::SendIOAPICEOI();
 }
