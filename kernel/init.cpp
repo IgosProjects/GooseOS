@@ -18,6 +18,7 @@
 */
 
 #include <boot/framebuffer.hpp>
+#include <input/keyboard.hpp>
 #include <arch.hpp>
 #include <core.hpp>
 #include <console/console.hpp>
@@ -35,6 +36,9 @@ extern "C" void InitKernel() {
 	// Initilize the console
 	Graphics::Framebuffer* fb = GooseOS::Graphics::GetCurrentFramebuffer();
 	Console::Init(fb);
+
+	// Initilize the keyboard
+	Input::Keyboard::Init();
 
 	Console::INFO("Framebuffer Address: 0x%x", fb->addr);
 

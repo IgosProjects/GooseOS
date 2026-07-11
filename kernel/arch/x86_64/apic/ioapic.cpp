@@ -145,6 +145,18 @@ void MaskIOAPICPin(uint8_t pin, u64 base) {
     IOAPICWrite(base, low_reg_offset, low_window);
 }
 
+inline u8 GetLocalApicId() {
+    u32 eax, ebx, ecx, edx;
+    
+    // Query CPUID leaf 1
+    asm volatile("cpuid"
+                 : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
+                 : "a"(1));
+
+    // The initial APIC ID is packed into the high byte of EBX (bits 24-31)
+    return (ebx >> 24) & 0xFF;
+}
+
 // Initilizes the motherboard chip I/O APIC
 // Must be called ONCE on the GP
 void CPU::APIC::InitIOAPIC(u64 HHDMOffset) {
@@ -193,8 +205,8 @@ void CPU::APIC::InitIOAPIC(u64 HHDMOffset) {
     Memory::VMM::MapPage(pml4_virt, IOAPICAddress, PhysAddress, GooseOS::Memory::VMM::PTE_WRITABLE | GooseOS::Memory::VMM::PTE_WRITABLE | (1ULL << 3) | (1ULL << 4), HHDMOffset);
 
     // Now set the needed redirects
-    SetRedirectEntry(IOAPICAddress, 2, 32, 0);
-    SetRedirectEntry(IOAPICAddress, 1, 33, 0); // Redirect pin 2(keyboard) to entry 32(0x21) in the IDT on core 0(GP)
+    SetRedirectEntry(IOAPICAddress, 2, 32, GetLocalApicId());
+    SetRedirectEntry(IOAPICAddress, 1, 33, GetLocalApicId()); // Redirect pin 2(keyboard) to entry 32(0x21) in the IDT on core 0(GP)
 }
 
 // Sends an EOI(End Of Interrupt) to the IOAPIC

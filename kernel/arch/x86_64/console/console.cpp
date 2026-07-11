@@ -20,6 +20,7 @@
 #include <stdarg.h>
 #include <boot/framebuffer.hpp>
 #include <console/console.hpp>
+#include <core.hpp>
 #include <math.hpp>
 #include <utils.hpp>
 #include <console/serial.hpp>
@@ -154,7 +155,7 @@ const char* ParseStyling(const char* s) {
 
         // Check if out of bounds
         if (bufferindex >= 2) {
-            asm volatile("hlt"); // FIXME: Add proper panic
+            Core::Panic("Formatting buffer out of bounds!"); // FIXME: Add proper panic
         }
 
         bufferindex++;
@@ -426,7 +427,9 @@ void Console::Init(GooseOS::Graphics::Framebuffer* fb) {
     if (fb) {
         fb_ptr = fb; // Set the framebuffer pointer
     } else {
-        asm volatile("hlt"); // FIXME: Add proper error handling
+        // PLEASE NOTE: For the next person who has to fix this, its not my fault
+        // Its 100% my fault jk, but uhh yeah this CAN cause forever loops if Limine doesnt give a proper framebuffer
+        Core::Panic("Invalid framebuffer pointer passed in!"); // FIXME: Add proper error handling
     }
 }
 

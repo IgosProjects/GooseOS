@@ -18,15 +18,9 @@
 */
 
 #pragma once
-#include <types.hpp>
 
-// This file handles kernel configuration, for example you can make the kernel headless or no output at all!
-// Use only framebuffer or only serial and such
-
-// DISPLAY
-#define KRNL_USE_FB // Comment out if you want the kernel to not use framebuffer
-#define KRNL_USE_SERIAL // Comment out if you dont want the kernel writing to serial
-
-// ARCH SPECIFIC CONFIG!!!
-// If you are porting GooseOS, i recommend changing these!
-#define KRNL_KEYBOARD_INTERRUPT 33 // What interrupt is the keyboard on?
+// Main keyboard driver namespace
+namespace GooseOS::Input::Keyboard {
+    // Initilizes the keyboard driver and starts accepting keypresses
+    void Init();
+}

@@ -23,6 +23,7 @@
 
 #include <core.hpp>
 #include <console/console.hpp>
+#include <cpu/int.hpp>
 #include <io/ports.hpp>
 #include <apic/apic.hpp>
 
@@ -62,19 +63,11 @@ const char* ISRNames[32] = {
     "Reserved"                           // 31
 };
 
-struct interrupt_frame {
-    u64 r15, r14, r13, r12, r11, r10, r9, r8;
-    u64 rbp, rdi, rsi, rdx, rcx, rbx, rax;
-
-    u64 int_no;
-    u64 error_code;
-
-    u64 rip;
-    u64 cs;
-    u64 rflags;
-} __attribute__((packed));
-
 using namespace GooseOS;
+using HandlerFunc = void(*)(GooseOS::CPU::Interrupts::interrupt_frame* frame);
+
+// Make the handler table
+HandlerFunc ExternalInterruptHandlers[32] = { nullptr };
 
 // INTERNAL TO DRIVER
 // This function gets the core id using the GS register, used to know what processor encountered the error!
@@ -86,22 +79,50 @@ u32 GetCoreIDViaGS() {
 }
 
 // Handler for CPU issued ISR exceptions
-extern "C" void ISRHandler(interrupt_frame* int_frame) {
+extern "C" void ISRHandler(GooseOS::CPU::Interrupts::interrupt_frame* int_frame) {
     //u64 CoreID = GetCoreIDViaGS();
     u64 CoreID = 0;
 
     Core::Panic("Core %u has encountered a %s", CoreID, ISRNames[int_frame->int_no]); // Panic with the correct name and core
 }
 
+// Normal printf that doesnt need direct vaargs, doenst lock
+inline void LogFromIRQ(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    
+    // Call the internal PrintString(no spinlocks!)
+    Console::PrintStringInternal(fmt, args);
+    
+    va_end(args);
+}
+
+// Registers a new interrupt handler
+void CPU::Interrupts::RegisterInterrupt(u64 int_num, void* handler) {
+    // Check if in the valid IRQ range
+    if (int_num > 256) {LogFromIRQ("CPU::Intterupts::RegisterInterrupt: The x86_64 arch cannot register an interrupt higher than 256, provided id: %u", int_num); return;}
+    if (int_num < 31) {LogFromIRQ("CPU::Intterupts::RegisterInterrupt: The x86_64 arch cannot register an interrupt lower than 31, provided id: %u", int_num); return;}
+
+    // Check if a valid pointer
+    if (!handler) {LogFromIRQ("CPU::Intterupts::RegisterInterrupt: Invalid handler function pointer for interrupt %u, handler %x", int_num, (u64*)handler); return;}
+
+    ExternalInterruptHandlers[int_num - 32] = (HandlerFunc)handler;
+}
+
 // Handler for external device interrupts
-extern "C" void IRQHandler(interrupt_frame* int_frame) {
-    if (int_frame->int_no == 32) {
-        // Timer tick
-        Console::PrintChar('t');
-    } else if (int_frame->int_no == 33) {
-        // Key press
-        Console::OK("Recived key press!");
+extern "C" void IRQHandler(GooseOS::CPU::Interrupts::interrupt_frame* int_frame) {
+    // Check if a handler was registered, we do - 32 so we dont go out of bounds
+    if (ExternalInterruptHandlers[int_frame->int_no - 32]) {
+        ExternalInterruptHandlers[int_frame->int_no - 32](int_frame); // Call the function
+    } else {
+        // PLEASE DONT FIX: The below IF statement will PREVENT pagefaults
+        // It skips the timer printing if not registered!
+        if (int_frame->int_no == 32) goto sendeoi;
+
+        Console::INFO("No interrupt handler registered for interrupt %u", int_frame->int_no);
     }
+
+    sendeoi:
 
     CPU::APIC::SendEOI();
 }

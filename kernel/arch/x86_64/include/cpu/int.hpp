@@ -20,13 +20,21 @@
 #pragma once
 #include <types.hpp>
 
-// This file handles kernel configuration, for example you can make the kernel headless or no output at all!
-// Use only framebuffer or only serial and such
+// Main interrupt namespace
+namespace GooseOS::CPU::Interrupts {
+    struct interrupt_frame {
+        u64 r15, r14, r13, r12, r11, r10, r9, r8;
+        u64 rbp, rdi, rsi, rdx, rcx, rbx, rax;
 
-// DISPLAY
-#define KRNL_USE_FB // Comment out if you want the kernel to not use framebuffer
-#define KRNL_USE_SERIAL // Comment out if you dont want the kernel writing to serial
+        u64 int_no;
+        u64 error_code;
 
-// ARCH SPECIFIC CONFIG!!!
-// If you are porting GooseOS, i recommend changing these!
-#define KRNL_KEYBOARD_INTERRUPT 33 // What interrupt is the keyboard on?
+        u64 rip;
+        u64 cs;
+        u64 rflags;
+    } __attribute__((packed));
+
+
+    // Registers a new interrupt handler
+    void RegisterInterrupt(u64 int_num, void* handler);
+}

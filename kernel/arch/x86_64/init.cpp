@@ -68,15 +68,15 @@ void LoadCoreContext(CPU::CoreContext* context) {
 
 // Waits until GP is ready, then starts executes AP code
 void APEntry(struct limine_mp_info* info) {
-    // Here is where EARLY CORE init goes! Not normal code
-    CPU::InitGDT();
-    CPU::LoadIDT();
-
     // Set core context(GS)
     uint32_t id = info->processor_id;
     CoreContextes[id].CoreID = id;
     CoreContextes[id].LapicID = info->lapic_id;
     LoadCoreContext(&CoreContextes[id]);
+
+    // Here is where EARLY CORE init goes! Not normal code
+    CPU::InitGDT();
+    CPU::LoadIDT();
 
     // Initilize the x2APIC(for IRQs and external interrupts)
     CPU::APIC::InitLAPIC();
@@ -166,14 +166,13 @@ void Arch::EarlyInit() {
 
     // Initilize the IOAPIC for routing interrupts to cores
     CPU::APIC::InitIOAPIC(HHDMOffset);
-
-    asm volatile("sti"); // Enable interrupts
 }
 
 // Initilizes the not so needed arch specific functions
 void Arch::LateInit() {
     Console::Log("Starting APs at address %x!", reinterpret_cast<uint64_t>(APEntry));
- 
+    asm volatile("sti"); // Enable interrupts
+
     struct limine_mp_response* mp_response = mp_request.response;
     
     if (mp_response != nullptr) {
