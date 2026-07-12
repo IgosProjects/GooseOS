@@ -43,7 +43,7 @@ Storage::Ramdisk Storage::GetCurrentRamdisk() {
         // Check if the module is our ramdisk using the string property
         if (module_file->string == "ramdisk") {
             ramdisk_file = module_file;
-            return;
+            return {}; // FIX: no more compiler error!
         }
     }
 
