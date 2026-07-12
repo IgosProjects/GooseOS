@@ -58,12 +58,19 @@ kernel = executable(
     link_depends: linker_script
 )
 
+# Limine configuration file
+limine_conf = configure_file(
+  input: 'limine.conf',
+  output: 'limine.conf',
+  copy: true
+)
+
 run_target('run',
-    command: ['qemu-system-x86_64', '-kernel', kernel.full_path()],
-    depends: kernel
+    command: ['qemu-system-x86_64', '-hdd', 'gooseOS.img'],
+    depends: [kernel]
 )
 
 run_target('img',
-    command: ['toolchain/create-limine.sh', kernel.full_path(), 'gooseOS.img'],
-    depends: kernel
+    command: ['toolchain/create-limine.sh', kernel.full_path(), 'gooseOS.img', join_paths(meson.current_build_dir(), 'extra_files'), limine_conf],
+    depends: [kernel]
 )

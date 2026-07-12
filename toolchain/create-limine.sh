@@ -24,18 +24,23 @@ set -euo pipefail
 
 # Simple usage check
 if [ $# -eq 0 ]; then
-    echo "Usage: $0 <kernel.elf> [output.img]"
+    echo "Usage: $0 <kernel.elf> [output.img] <extrafiles/>"
     exit 1
 fi
 
 KERNEL="$1"
 IMAGE="$2"
+EXTRAFILES="$3"
 
 printf "create-limine.sh v1.0\n\n"
 printf "This script will create a new EFI Limine image with your kernel in it!\n\n"
 
+printf "NOTICE: To put extra files inside of the IMG, put them in the folder passed in as the third argument\n"
+printf "NOTICE: Those files WILL be put inside of the /boot directory\n"
+
 printf "KERNEL: ${KERNEL}\n"
 printf "IMAGE: ${IMAGE}\n"
+printf "EXTRAFILES: ${EXTRAFILES}\n"
 
 ## CONFIG START
 
@@ -47,7 +52,7 @@ LIMINE_BINARY_DOWNLOAD="https://github.com/Limine-Bootloader/Limine/releases/dow
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Check for all dependencies
-deps=("wget" "xorriso" "dd" "parted" "mkfs.fat" "losetup" "mount" "umount" "unzip")
+deps=("wget" "dd" "parted" "mkfs.fat" "losetup" "mount" "umount" "unzip")
 missing=()
 for cmd in "${deps[@]}"; do
     if ! command -v "$cmd" >/dev/null; then
@@ -90,6 +95,11 @@ printf "[\033[32mOK\033[0m] Created folders\n"
 
 #cp "${SCRIPT_DIR}/tmp/limine-binary/BOOTX64.EFI" "${SCRIPT_DIR}/tmp/img_root/EFI/BOOT" # EFI boot entry
 cp "${KERNEL}" "${SCRIPT_DIR}/tmp/img_root/boot/kernel" # Kernel ELF
+
+if [ -d "${EXTRAFILES}" ]; then
+    # The "/." tells bash to copy everything INSIDE the folder, not the folder itself
+    cp -r "${EXTRAFILES}/." "${SCRIPT_DIR}/tmp/img_root/boot/"
+fi
 
 printf "[\033[32mOK\033[0m] Copied files\n"
 
