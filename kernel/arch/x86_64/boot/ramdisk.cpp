@@ -43,9 +43,11 @@ Storage::Ramdisk Storage::GetCurrentRamdisk() {
         // Check if the module is our ramdisk using the string property
         if (module_file->string == "ramdisk") {
             ramdisk_file = module_file;
-            return {}; // FIX: no more compiler error!
+            goto found_ramdisk; // FIX OF FIX: NEVER return inside of an FOR statement!
         }
     }
+
+    found_ramdisk:
 
     assert((!ramdisk_file), "RAMDISK: Choulnt find any valid ramdisk!");
     
