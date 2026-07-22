@@ -19,6 +19,7 @@
 
 #include <blockdev/ramdisk.hpp>
 #include <limine/limine.h>
+#include <utils.hpp>
 #include <core.hpp>
 #include <console/console.hpp>
 
@@ -27,21 +28,27 @@ extern "C" struct limine_module_request module_request;
 using namespace GooseOS;
 
 // Returns the currently used ramdisk
-Storage::Ramdisk Storage::GetCurrentRamdisk() {
+Storage::Ramdisk::Ramdisk Storage::Ramdisk::GetCurrentRamdisk() {
     // Check if limine gave us an ramdisk
     assert((module_request.response), "RAMDISK: Limine did not give us an ramdisk! Is it loaded as an module?");
 
     // Find our ramdisk in the list
-    Console::PrintString("RAMDISK: Amount of modules given by Limine: %u", module_request.response->module_count);
+    Console::OK("RAMDISK: Amount of modules given by Limine: %u", module_request.response->module_count);
 
     struct limine_file* ramdisk_file;
-    struct Storage::Ramdisk ramdisk;
+    struct Storage::Ramdisk::Ramdisk ramdisk;
 
-    for (u64 i = module_request.response->module_count; i <= 0; i--) {
+    for (u64 i = 0; i < module_request.response->module_count; i++) {
         struct limine_file* module_file = module_request.response->modules[i];
 
+        // Check if the module is valid
+        if (!module_file || !module_file->string) {
+            Console::Error("RAMDISK: Skipped an empty or invalid module at index %u\n", i);
+            continue;
+        }
+
         // Check if the module is our ramdisk using the string property
-        if (module_file->string == "ramdisk") {
+        if (Utils::strcmp(module_file->string, "ramdisk") == ktrue) {
             ramdisk_file = module_file;
             goto found_ramdisk; // FIX OF FIX: NEVER return inside of an FOR statement!
         }
@@ -49,7 +56,7 @@ Storage::Ramdisk Storage::GetCurrentRamdisk() {
 
     found_ramdisk:
 
-    assert((!ramdisk_file), "RAMDISK: Choulnt find any valid ramdisk!");
+    assert((ramdisk_file != nullptr), "RAMDISK: Choulnt find any valid ramdisk!");
     
     // Update the values
     ramdisk.addr = ramdisk_file->address;

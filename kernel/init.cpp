@@ -17,6 +17,8 @@
  *	Copyright(c) 2026 EyeDev
 */
 
+#include <blockdev/blockdevice.hpp>
+#include <blockdev/ramdisk.hpp>
 #include <boot/framebuffer.hpp>
 #include <input/keyboard.hpp>
 #include <arch.hpp>
@@ -40,9 +42,28 @@ extern "C" void InitKernel() {
 	// Initilize the keyboard
 	Input::Keyboard::Init();
 
+	// Initilize the root filesystem, so we can run apps and read files
+	Storage::BlockDevice root_blk_dev; // Create an empty block device
+	Storage::Ramdisk::Init(&root_blk_dev);
+
+	// READ TEST
+	Console::INFO("Testing reading from ramdisk!");
+	
+	char TestBuffer[512]; // Create an empty 512 byte test buffer
+	root_blk_dev.ReadSector(TestBuffer, 0, root_blk_dev); // Read the first sector
+
+	Console::PrintChar(TestBuffer[0]);
+	Console::PrintChar(TestBuffer[1]);
+	Console::PrintChar(TestBuffer[2]);
+	Console::PrintChar(TestBuffer[3]);
+	Console::PrintChar(TestBuffer[4]);
+
 	Console::INFO("Framebuffer Address: 0x%x", fb->addr);
 
 	Arch::LateInit(); // Call the Arch::LateInit function to do not so critical stuff
+
+	Console::PrintString("C[c,3]");
+	Console::PrintString("C[r,]");
 
 	for (;;) {
 		asm volatile("hlt");

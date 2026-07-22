@@ -22,6 +22,8 @@
 
 // GooseOS storage system
 namespace GooseOS::Storage {
+    struct BlockDevice; // yo compiler, trust me this will exist!
+
     // FUNCTION IDENTIFIERS
     using _BLOCKDEV_ReadFunction = bl(*)(void* buffer, u64 sector, BlockDevice dev);
     using _BLOCKDEV_WriteFunction = bl(*)(void* buffer, u64 sector, BlockDevice dev);
@@ -44,11 +46,11 @@ namespace GooseOS::Storage {
     // GooseOS block device structure
     struct BlockDevice {
         // Reads the data from SECTOR into the specified buffer
-        // Returns false if an error happens!
+        // Returns true if done sucessfully, returns false if not
         _BLOCKDEV_ReadFunction ReadSector;
 
         // Writes the data from BUFFER into the specified sector!
-        // Returns false if an error happens!
+        // Returns true if done sucessfully, returns false if not
         _BLOCKDEV_WriteFunction WriteSector;
 
         // Returns an BlockDeviceInfo struct containing the device info

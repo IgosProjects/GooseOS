@@ -53,6 +53,9 @@ namespace GooseOS::Console {
     // Outputs a string to the display but with "INFO" before it
     void INFO(const char* s, ...);
 
+    // Outputs a string to the display but with "ERR" before it
+    void Error(const char* s, ...);
+
     // Initilizes the console driver, allows for printing
     void Init(GooseOS::Graphics::Framebuffer* fb);
 

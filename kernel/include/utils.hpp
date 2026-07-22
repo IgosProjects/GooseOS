@@ -37,4 +37,28 @@ namespace GooseOS::Utils {
         }
         return dest;
     }
+
+    // Copies N amount of bytes from SRC to DEST
+    inline void* memcpy(void* dest, const void* src, size n) {
+        // Cast the void pointers to byte pointers, that way we can read them byte by byte
+        unsigned char* d = (unsigned char*)dest;
+        const unsigned char* s = (const unsigned char*)src;
+
+        // Loop through and copy every single byte
+        for (size i = 0; i < n; i++) {
+            d[i] = s[i];
+        }
+
+        // memcpy always returns the original destination pointer
+        return dest;
+    }
+
+    // Checks if S1 and S2 are the same string, if so it returns true
+    inline bl strcmp(const char* s1, const char* s2) {
+        while (*s1 && (*s1 == *s2)) {
+            s1++;
+            s2++;
+        }
+        return *s1 == *s2;
+    }
 }

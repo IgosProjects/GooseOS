@@ -400,6 +400,24 @@ void Console::Log(const char* s, ...) {
     ConsoleLock.Unlock();
 }
 
+// Outputs a string to the display but with "ERR" before it
+void Console::Error(const char* s, ...) {
+    ConsoleLock.Lock();
+
+    PrintStringInternal("C[fg,0]LOGC[r,] ", {});
+
+    va_list a;
+    va_start(a, s);
+
+    PrintStringInternal(s, a);
+
+    Console::PrintChar('\n');
+
+    va_end(a);
+
+    ConsoleLock.Unlock();
+}
+
 // Outputs a string to the display but with "OK" before it
 void Console::OK(const char* s, ...) {
     ConsoleLock.Lock();

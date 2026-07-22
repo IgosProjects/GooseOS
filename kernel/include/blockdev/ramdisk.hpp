@@ -18,15 +18,24 @@
 */
 
 #pragma once
+#include <blockdev/blockdevice.hpp>
 #include <types.hpp>
 
 // GooseOS storage system
-namespace GooseOS::Storage {
+namespace GooseOS::Storage::Ramdisk {
     struct Ramdisk {
         void* addr;
         u64 size;
     };
 
+    struct RamdiskData {
+        void* addr; // Address to ramdisk
+        u64 sector_size; // Size in sectors
+    };
+
     // Returns the currently used ramdisk
     Ramdisk GetCurrentRamdisk();
+
+    // Initilizes the ramdisk driver, modify's the passed in block devices's values
+    void Init(GooseOS::Storage::BlockDevice* blk_device);
 } 
