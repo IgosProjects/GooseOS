@@ -36,12 +36,7 @@ void Core::Halt() {
     va_list a;
     va_start(a, r);
 
-    Console::PrintString("C[c,0]\n========================\n\n");
-    Console::PrintString("KERNEL PANIC!\n");
-    Console::PrintString("\n========================\n\n");
-    Console::PrintString("GooseOS has run into a critical error and has to restart!\n");
-    Console::PrintString("Please make a new issue on Github so we can fix it.\n");
-    Console::PrintString("\n========================\n\n");
+    Console::PrintString("IMPROVING IN PROCESS");
 
     Console::PrintStringInternal(r, a);
     Console::PrintChar('\n');
@@ -51,4 +46,5 @@ void Core::Halt() {
     va_end(a);
 
     Core::Halt();
+    __builtin_unreachable();
 }

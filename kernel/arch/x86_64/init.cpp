@@ -189,6 +189,9 @@ void Arch::LateInit() {
         }
     }
 
+    Console::PrintString("C[c,3]");
+	Console::PrintString("C[r,]");
+
     APsSafeToRun = ktrue;
 
     Console::OK("Welcome to GooseOS on x86_64");

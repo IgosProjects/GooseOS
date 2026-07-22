@@ -41,3 +41,9 @@ using uintptr_t = unsigned int;
 // Unsigned and signed size_t variables
 using size = unsigned long long;
 using ssize = signed long long;
+
+// Signed integers
+using i8  = signed char;
+using i16 = signed short;
+using i32 = signed int;
+using i64 = signed long long;

@@ -59,11 +59,9 @@ extern "C" void InitKernel() {
 	Console::PrintChar(TestBuffer[4]);
 
 	Console::INFO("Framebuffer Address: 0x%x", fb->addr);
+	Core::Panic("DO NOT DEBUG");
 
 	Arch::LateInit(); // Call the Arch::LateInit function to do not so critical stuff
-
-	Console::PrintString("C[c,3]");
-	Console::PrintString("C[r,]");
 
 	for (;;) {
 		asm volatile("hlt");

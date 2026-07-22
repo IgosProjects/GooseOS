@@ -17,19 +17,14 @@
  *	Copyright(c) 2026 EyeDev
 */
 
-#pragma once
-#include <types.hpp>
+// PLEASE NOTE: This filesystem is used to test the VFS, it ONLY ever can read HELLO and it never writes!
 
-// This file handles kernel configuration, for example you can make the kernel headless or no output at all!
-// Use only framebuffer or only serial and such
+#include <storage/vfs.hpp>
+#include <core.hpp>
 
-// DISPLAY
-#define KRNL_USE_FB // Comment out if you want the kernel to not use framebuffer
-#define KRNL_USE_SERIAL // Comment out if you dont want the kernel writing to serial
+using namespace GooseOS;
 
-// VFS
-#define KRNL_MAX_MOUNTS 32 // Max amount of mounted partitions
+// ALLWAYS returns an test file descriptor that only ever reads HELLO
+GooseOS::Storage::VnodeOpenFn TESTFS_open(VNode* vnode, FileHandle** out) {
 
-// ARCH SPECIFIC CONFIG!!!
-// If you are porting GooseOS, i recommend changing these!
-#define KRNL_KEYBOARD_INTERRUPT 33 // What interrupt is the keyboard on?
+}
