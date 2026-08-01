@@ -1,3 +1,22 @@
+/*
+ *	This file is part of gooseOS.
+ *
+ *	gooseOS is free software: you can redistribute it and/or modify
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation, either version 3 of the License, or
+ *	(at your option) any later version.
+ *
+ *	gooseOS is distributed in the hope that it will be useful,
+ *	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *	GNU General Public License for more details.
+ *
+ *	You should have received a copy of the GNU General Public License
+ *	along with gooseOS.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *	Copyright(c) 2026 EyeDev
+*/
+
 #include <types.hpp>
 #include <limine/limine.h>
 #include <core.hpp>
@@ -83,10 +102,15 @@ void Memory::PMM::Init(u64 HHDMOffset) {
         SetBit(bitmap_start_page + p);
     }
 
+    // Protect the real mode below 1MiB stuff
+    for (size page = 0; page < 256; page++) {
+        SetBit(page);
+    }
+
     // Protect bootloader and kernel data
     for (size i = 0; i < entry_count; i++) {
         struct limine_memmap_entry* entry = memmap_request.response->entries[i];
-        
+
         // If it's NOT usable, OR if it's the kernel/modules/reclaimable memory, lock it up!
         if (entry->type != LIMINE_MEMMAP_USABLE) {
             size start_page = entry->base / 4096;
