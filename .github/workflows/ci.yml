@@ -2,7 +2,7 @@ name: CI - Build kernel
 
 on:
   push:
-    branches: [ main, 'add-copilot-instructions' ]
+    branches: [ main, 'add-ci' ]
   pull_request:
     branches: [ main ]
 
@@ -10,6 +10,8 @@ jobs:
   build-kernel:
     name: Build kernel (meson + ninja)
     runs-on: ubuntu-latest
+    env:
+      PATH: $HOME/.local/bin:$PATH
 
     steps:
       - name: Checkout repo
