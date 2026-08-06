@@ -42,7 +42,7 @@ jobs:
       - name: Build kernel.elf
         env:
           PATH: $HOME/.local/bin:$PATH
-        run: meson compile -C build kernel.elf
+        run: meson setup build && cd build && ninja
 
       - name: Upload kernel artifact
         uses: actions/upload-artifact@v4
