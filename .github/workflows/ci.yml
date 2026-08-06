@@ -1,0 +1,49 @@
+name: CI - Build kernel
+
+on:
+  push:
+    branches: [ main, 'add-copilot-instructions' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-kernel:
+    name: Build kernel (meson + ninja)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential nasm python3-pip pkg-config git ninja-build
+          export PATH="$HOME/.local/bin:$PATH"
+
+      - name: Install Meson
+        run: |
+          pip3 install --user meson
+          export PATH="$HOME/.local/bin:$PATH"
+
+      - name: Configure Meson build dir
+        env:
+          PATH: $HOME/.local/bin:$PATH
+        run: |
+          # Setup or reconfigure the build directory
+          if [ -d build ]; then
+            meson setup --reconfigure build
+          else
+            meson setup build
+          fi
+
+      - name: Build kernel.elf
+        env:
+          PATH: $HOME/.local/bin:$PATH
+        run: meson compile -C build kernel.elf
+
+      - name: Upload kernel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-elf
+          path: build/kernel.elf
