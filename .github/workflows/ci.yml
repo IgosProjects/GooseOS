@@ -16,8 +16,8 @@ jobs:
     steps:
       - name: Install system packages
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential nasm python3-pip pkg-config git ninja-build tar
+          apt-get update
+          apt-get install -y build-essential nasm python3-pip pkg-config git ninja-build tar
           export PATH="$HOME/.local/bin:$PATH"
 
       - name: Install Meson
